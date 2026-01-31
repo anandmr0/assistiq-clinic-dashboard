@@ -1,0 +1,270 @@
+.dashboard-stats {
+    margin-bottom: 1.5rem;
+  }
+  
+  .stats-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-bottom: 1rem;
+    letter-spacing: -0.3px;
+    padding: 0 0.25rem;
+  }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
+  }
+  
+  .stat-card {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition-base);
+    cursor: pointer;
+    min-height: 80px;
+    animation: slideInUp 0.4s ease-out backwards;
+  }
+  
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .stat-card:nth-child(1) { animation-delay: 0.05s; }
+  .stat-card:nth-child(2) { animation-delay: 0.1s; }
+  .stat-card:nth-child(3) { animation-delay: 0.15s; }
+  .stat-card:nth-child(4) { animation-delay: 0.2s; }
+  
+  /* Touch device active state */
+  @media (hover: none) and (pointer: coarse) {
+    .stat-card:active {
+      transform: scale(0.98);
+      box-shadow: var(--shadow-md);
+    }
+  }
+  
+  /* Hover for desktop */
+  @media (hover: hover) and (pointer: fine) {
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .stat-card:hover .stat-icon {
+      transform: scale(1.05);
+    }
+  }
+  
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    flex-shrink: 0;
+    transition: transform var(--transition-base);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  .stat-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .stat-content {
+    flex: 1;
+    z-index: 1;
+    min-width: 0;
+  }
+  
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--gray-800);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.5px;
+  }
+  
+  .stat-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .stat-decoration {
+    position: absolute;
+    right: -15px;
+    bottom: -15px;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    opacity: 0.05;
+    transition: all var(--transition-slow);
+    pointer-events: none;
+  }
+  
+  .stat-card.stat-blue .stat-icon {
+    background: linear-gradient(135deg, #0066CC 0%, #004C99 100%);
+  }
+  
+  .stat-card.stat-blue .stat-decoration {
+    background: var(--primary-blue);
+  }
+  
+  .stat-card.stat-green .stat-icon {
+    background: linear-gradient(135deg, #06D6A0 0%, #048B69 100%);
+  }
+  
+  .stat-card.stat-green .stat-decoration {
+    background: var(--success-green);
+  }
+  
+  .stat-card.stat-amber .stat-icon {
+    background: linear-gradient(135deg, #FFB830 0%, #C97B00 100%);
+  }
+  
+  .stat-card.stat-amber .stat-decoration {
+    background: var(--warning-amber);
+  }
+  
+  .stat-card.stat-teal .stat-icon {
+    background: linear-gradient(135deg, #00A896 0%, #007A6E 100%);
+  }
+  
+  .stat-card.stat-teal .stat-decoration {
+    background: var(--accent-teal);
+  }
+  
+  /* ================================================
+     Tablet Responsive (600px and up)
+     ================================================ */
+  
+  @media (min-width: 600px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    
+    .stats-title {
+      font-size: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    
+    .stat-card {
+      padding: 1.25rem;
+    }
+    
+    .stat-icon {
+      width: 52px;
+      height: 52px;
+    }
+    
+    .stat-icon svg {
+      width: 26px;
+      height: 26px;
+    }
+    
+    .stat-value {
+      font-size: 2rem;
+    }
+    
+    .stat-label {
+      font-size: 0.875rem;
+    }
+  }
+  
+  /* ================================================
+     Desktop Responsive (1024px and up)
+     ================================================ */
+  
+  @media (min-width: 1024px) {
+    .dashboard-stats {
+      margin-bottom: 2rem;
+    }
+    
+    .stats-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+    }
+    
+    .stats-title {
+      font-size: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+      padding: 1.5rem;
+      min-height: 100px;
+    }
+    
+    .stat-icon {
+      width: 56px;
+      height: 56px;
+    }
+    
+    .stat-icon svg {
+      width: 28px;
+      height: 28px;
+    }
+    
+    .stat-value {
+      font-size: 2.25rem;
+    }
+    
+    .stat-decoration {
+      width: 120px;
+      height: 120px;
+      right: -20px;
+      bottom: -20px;
+    }
+  }
+  
+  /* ================================================
+     Large Desktop (1400px and up)
+     ================================================ */
+  
+  @media (min-width: 1400px) {
+    .stat-card {
+      padding: 1.75rem;
+    }
+  }
+  
+  /* ================================================
+     Print Styles
+     ================================================ */
+  
+  @media print {
+    .stat-card {
+      box-shadow: none;
+      border: 1px solid var(--gray-300);
+      page-break-inside: avoid;
+    }
+    
+    .stat-decoration {
+      display: none;
+    }
+  }

@@ -1,0 +1,507 @@
+/* ================================================
+   Doctor Dashboard - Mobile Responsive Design
+   ================================================ */
+
+   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:wght@300;400;600;700&display=swap');
+
+   :root {
+     /* Medical Color Palette */
+     --primary-blue: #0066CC;
+     --primary-blue-light: #3385DB;
+     --primary-blue-dark: #004C99;
+     --accent-teal: #00A896;
+     --accent-coral: #FF6B6B;
+     --success-green: #06D6A0;
+     --warning-amber: #FFB830;
+     --error-red: #EF476F;
+     
+     /* Neutrals */
+     --white: #FFFFFF;
+     --gray-50: #F8FAFB;
+     --gray-100: #EDF2F7;
+     --gray-200: #E2E8F0;
+     --gray-300: #CBD5E0;
+     --gray-400: #A0AEC0;
+     --gray-500: #718096;
+     --gray-600: #4A5568;
+     --gray-700: #2D3748;
+     --gray-800: #1A202C;
+     --gray-900: #0F1419;
+     
+     /* Spacing - Mobile First */
+     --spacing-xs: 0.5rem;
+     --spacing-sm: 0.75rem;
+     --spacing-md: 1rem;
+     --spacing-lg: 1.5rem;
+     --spacing-xl: 2rem;
+     --spacing-2xl: 3rem;
+     
+     /* Typography */
+     --font-display: 'Fraunces', serif;
+     --font-body: 'Plus Jakarta Sans', sans-serif;
+     
+     /* Shadows */
+     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+     
+     /* Border Radius */
+     --radius-sm: 0.375rem;
+     --radius-md: 0.5rem;
+     --radius-lg: 0.75rem;
+     --radius-xl: 1rem;
+     --radius-2xl: 1.5rem;
+     --radius-full: 9999px;
+     
+     /* Transitions */
+     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+     --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+     --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+   }
+   
+   * {
+     margin: 0;
+     padding: 0;
+     box-sizing: border-box;
+     -webkit-tap-highlight-color: transparent;
+   }
+   
+   body {
+     font-family: var(--font-body);
+     background: var(--gray-50);
+     color: var(--gray-800);
+     line-height: 1.6;
+     -webkit-font-smoothing: antialiased;
+     -moz-osx-font-smoothing: grayscale;
+     min-height: 100vh;
+     overflow-x: hidden;
+   }
+   
+   /* ================================================
+      Dashboard Container
+      ================================================ */
+   
+   .doctor-dashboard {
+     min-height: 100vh;
+     display: flex;
+     flex-direction: column;
+     animation: fadeIn 0.5s ease-out;
+   }
+   
+   @keyframes fadeIn {
+     from { opacity: 0; }
+     to { opacity: 1; }
+   }
+   
+   /* ================================================
+      Header - Mobile Optimized
+      ================================================ */
+   
+   .dashboard-header {
+     background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+     color: var(--white);
+     padding: 1rem;
+     box-shadow: var(--shadow-lg);
+     position: sticky;
+     top: 0;
+     z-index: 100;
+     animation: slideDown 0.4s ease-out;
+   }
+   
+   @keyframes slideDown {
+     from {
+       transform: translateY(-100%);
+       opacity: 0;
+     }
+     to {
+       transform: translateY(0);
+       opacity: 1;
+     }
+   }
+   
+   .header-content {
+     max-width: 1400px;
+     margin: 0 auto;
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     gap: 1rem;
+   }
+   
+   .doctor-info {
+     display: flex;
+     align-items: center;
+     gap: 0.75rem;
+     flex: 1;
+     min-width: 0;
+   }
+   
+   .doctor-avatar {
+     width: 48px;
+     height: 48px;
+     background: rgba(255, 255, 255, 0.2);
+     border-radius: var(--radius-full);
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     border: 2px solid rgba(255, 255, 255, 0.3);
+     flex-shrink: 0;
+   }
+   
+   .doctor-avatar svg {
+     width: 28px;
+     height: 28px;
+     color: var(--white);
+   }
+   
+   .doctor-text {
+     flex: 1;
+     min-width: 0;
+   }
+   
+   .doctor-text h1 {
+     font-family: var(--font-display);
+     font-size: 1.125rem;
+     font-weight: 700;
+     margin-bottom: 0.125rem;
+     letter-spacing: -0.3px;
+     white-space: nowrap;
+     overflow: hidden;
+     text-overflow: ellipsis;
+   }
+   
+   .doctor-text .specialization {
+     font-size: 0.8125rem;
+     opacity: 0.9;
+     font-weight: 500;
+     white-space: nowrap;
+     overflow: hidden;
+     text-overflow: ellipsis;
+   }
+   
+   .doctor-text .clinic-name {
+     font-size: 0.75rem;
+     opacity: 0.75;
+     font-weight: 400;
+     display: none; /* Hide on mobile */
+   }
+   
+   .back-button {
+     display: flex;
+     align-items: center;
+     gap: 0.375rem;
+     padding: 0.5rem 0.75rem;
+     background: rgba(255, 255, 255, 0.15);
+     color: var(--white);
+     border: 1px solid rgba(255, 255, 255, 0.3);
+     border-radius: var(--radius-lg);
+     font-size: 0.875rem;
+     font-weight: 600;
+     cursor: pointer;
+     transition: all var(--transition-base);
+     font-family: var(--font-body);
+     flex-shrink: 0;
+   }
+   
+   .back-button:hover {
+     background: rgba(255, 255, 255, 0.25);
+   }
+   
+   .back-button svg {
+     width: 18px;
+     height: 18px;
+   }
+   
+   /* ================================================
+      Main Content - Mobile Optimized
+      ================================================ */
+   
+   .dashboard-main {
+     flex: 1;
+     max-width: 1400px;
+     width: 100%;
+     margin: 0 auto;
+     padding: 1rem;
+     animation: fadeInUp 0.5s ease-out 0.1s backwards;
+   }
+   
+   @keyframes fadeInUp {
+     from {
+       opacity: 0;
+       transform: translateY(20px);
+     }
+     to {
+       opacity: 1;
+       transform: translateY(0);
+     }
+   }
+   
+   /* ================================================
+      Loading States
+      ================================================ */
+   
+   .dashboard-loading {
+     min-height: 100vh;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     gap: var(--spacing-lg);
+     padding: var(--spacing-xl);
+   }
+   
+   .loading-spinner {
+     width: 40px;
+     height: 40px;
+     border: 3px solid var(--gray-200);
+     border-top-color: var(--primary-blue);
+     border-radius: var(--radius-full);
+     animation: spin 0.8s linear infinite;
+   }
+   
+   @keyframes spin {
+     to { transform: rotate(360deg); }
+   }
+   
+   .loading-overlay {
+     position: fixed;
+     top: 0;
+     left: 0;
+     right: 0;
+     bottom: 0;
+     background: rgba(255, 255, 255, 0.95);
+     backdrop-filter: blur(4px);
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     z-index: 1000;
+     animation: fadeIn 0.2s ease-out;
+   }
+   
+   /* ================================================
+      Utility Classes
+      ================================================ */
+   
+   .card {
+     background: var(--white);
+     border-radius: var(--radius-xl);
+     box-shadow: var(--shadow-sm);
+     padding: 1rem;
+     transition: all var(--transition-base);
+   }
+   
+   .section-title {
+     font-family: var(--font-display);
+     font-size: 1.25rem;
+     font-weight: 700;
+     color: var(--gray-800);
+     margin-bottom: var(--spacing-lg);
+     letter-spacing: -0.3px;
+   }
+   
+   .badge {
+     display: inline-flex;
+     align-items: center;
+     padding: 0.25rem 0.625rem;
+     border-radius: var(--radius-full);
+     font-size: 0.6875rem;
+     font-weight: 600;
+     text-transform: uppercase;
+     letter-spacing: 0.3px;
+     white-space: nowrap;
+   }
+   
+   .badge.status-scheduled {
+     background: rgba(255, 184, 48, 0.15);
+     color: #C97B00;
+   }
+   
+   .badge.status-confirmed {
+     background: rgba(6, 214, 160, 0.15);
+     color: #048B69;
+   }
+   
+   .badge.status-completed {
+     background: rgba(0, 102, 204, 0.15);
+     color: var(--primary-blue-dark);
+   }
+   
+   .badge.status-cancelled {
+     background: rgba(239, 71, 111, 0.15);
+     color: #C31E42;
+   }
+   
+   .badge.status-pending {
+     background: rgba(255, 184, 48, 0.15);
+     color: #C97B00;
+   }
+   
+   /* ================================================
+      Tablet Responsive (768px and up)
+      ================================================ */
+   
+   @media (min-width: 768px) {
+     .dashboard-header {
+       padding: 1.5rem;
+     }
+     
+     .doctor-avatar {
+       width: 56px;
+       height: 56px;
+     }
+     
+     .doctor-avatar svg {
+       width: 32px;
+       height: 32px;
+     }
+     
+     .doctor-text h1 {
+       font-size: 1.5rem;
+     }
+     
+     .doctor-text .specialization {
+       font-size: 0.9375rem;
+     }
+     
+     .doctor-text .clinic-name {
+       display: block;
+       font-size: 0.8125rem;
+     }
+     
+     .dashboard-main {
+       padding: 1.5rem;
+     }
+     
+     .section-title {
+       font-size: 1.5rem;
+     }
+   }
+   
+   /* ================================================
+      Desktop Responsive (1024px and up)
+      ================================================ */
+   
+   @media (min-width: 1024px) {
+     .dashboard-header {
+       padding: 2rem 1.5rem;
+     }
+     
+     .doctor-avatar {
+       width: 64px;
+       height: 64px;
+     }
+     
+     .doctor-avatar svg {
+       width: 36px;
+       height: 36px;
+     }
+     
+     .doctor-info {
+       gap: 1.5rem;
+     }
+     
+     .doctor-text h1 {
+       font-size: 1.75rem;
+     }
+     
+     .doctor-text .specialization {
+       font-size: 0.95rem;
+     }
+     
+     .doctor-text .clinic-name {
+       font-size: 0.85rem;
+     }
+     
+     .dashboard-main {
+       padding: 2rem 1.5rem;
+     }
+     
+     .section-title {
+       font-size: 1.75rem;
+     }
+     
+     .back-button {
+       padding: 0.75rem 1.5rem;
+       font-size: 0.95rem;
+     }
+     
+     .back-button svg {
+       width: 20px;
+       height: 20px;
+     }
+   }
+   
+   /* ================================================
+      Touch Improvements for Mobile
+      ================================================ */
+   
+   @media (hover: none) and (pointer: coarse) {
+     /* Larger touch targets */
+     button,
+     .patient-card,
+     .stat-card {
+       min-height: 44px;
+     }
+     
+     /* Remove hover effects on touch devices */
+     .patient-card:hover,
+     .stat-card:hover,
+     .back-button:hover {
+       transform: none;
+     }
+     
+     /* Add active states instead */
+     .patient-card:active {
+       transform: scale(0.98);
+       opacity: 0.9;
+     }
+     
+     .stat-card:active {
+       transform: scale(0.98);
+     }
+     
+     .back-button:active {
+       transform: scale(0.95);
+     }
+   }
+   
+   /* ================================================
+      Safe Area Support (iPhone notch, etc.)
+      ================================================ */
+   
+   @supports (padding: env(safe-area-inset-top)) {
+     .dashboard-header {
+       padding-top: calc(1rem + env(safe-area-inset-top));
+       padding-left: calc(1rem + env(safe-area-inset-left));
+       padding-right: calc(1rem + env(safe-area-inset-right));
+     }
+     
+     .dashboard-main {
+       padding-left: calc(1rem + env(safe-area-inset-left));
+       padding-right: calc(1rem + env(safe-area-inset-right));
+       padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+     }
+   }
+   
+   /* ================================================
+      Print Styles
+      ================================================ */
+   
+   @media print {
+     .dashboard-header,
+     .back-button,
+     .loading-overlay {
+       display: none;
+     }
+     
+     .dashboard-main {
+       padding: 0;
+     }
+     
+     .card {
+       box-shadow: none;
+       border: 1px solid var(--gray-300);
+       page-break-inside: avoid;
+     }
+   }

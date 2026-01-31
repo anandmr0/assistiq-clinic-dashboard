@@ -1,0 +1,32 @@
+# Stage 1: Build
+FROM eclipse-temurin:17-jdk-alpine AS builder
+WORKDIR /build
+
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+
+RUN chmod +x mvnw
+RUN ./mvnw dependency:go-offline -B
+
+COPY src ./src
+RUN ./mvnw clean package -DskipTests
+
+# Stage 2: Runtime
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+
+RUN apk add --no-cache curl
+
+COPY --from=builder /build/target/*.jar app.jar
+
+RUN addgroup -S spring && adduser -S spring -G spring
+RUN chown -R spring:spring /app
+USER spring:spring
+
+ENV JAVA_OPTS="-Xms256m -XX:MaxRAMPercentage=75 -XX:+UseContainerSupport"
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=90s --retries=3 \
+  CMD curl -f http://localhost:${PORT}/actuator/health || exit 1
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${PORT} -jar app.jar"]
