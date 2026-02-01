@@ -4,19 +4,20 @@ import DashboardStats from './DashboardStats';
 import PatientList from './PatientList';
 import { fetchDashboardData } from '../services/dashboardApi.js';
 
-const DoctorDashboard = () => {
+const DoctorDashboard = ({ doctorId, clinicId }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const params = new URLSearchParams(window.location.search);
-  const doctorId = params.get('doctorId');
-  const clinicId = params.get('clinicId');
+ 
   useEffect(() => {
     if (doctorId && clinicId) {
         loadDashboard(doctorId, clinicId);
       }
   }, [doctorId, clinicId]);
 
-  const loadDashboard = async () => {
+  const loadDashboard = async (doctorId, clinicId) => {
+
+    if (!doctorId || !clinicId) return;
+
     try {
       setLoading(true);
       const data = await fetchDashboardData(doctorId, clinicId);
@@ -80,6 +81,8 @@ const DoctorDashboard = () => {
                onPatientSelect={handlePatientSelect}
                onRefreshAppointments={loadDashboard}
                updatePatientStatus={updatePatientStatus}
+               doctorId={doctorId}
+               clinicId={clinicId}
             />
           </>
         )}

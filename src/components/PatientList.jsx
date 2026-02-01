@@ -3,7 +3,7 @@ import '../css/PatientList.css';
 import AddWalkInModal from './AddWalkInModal';
 import { apiFetch } from "../services/apiConfig";
 const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
-  updatePatientStatus,doctors = [] }) => {
+  updatePatientStatus,doctorId,clinicId,doctors = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('confirmed');
   const [expandedAppointment, setExpandedAppointment] = useState(null);
@@ -12,13 +12,7 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
   const [walkInInitData, setWalkInInitData] = useState(null);
   const [savingAppointmentId, setSavingAppointmentId] = useState(null);
   const [loadingWalkIn, setLoadingWalkIn] = useState(false);
-  const { doctorId, clinicId } = useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      doctorId: params.get("doctorId"),
-      clinicId: params.get("clinicId"),
-    };
-  }, []);
+
 
   useEffect(() => {
     setExpandedAppointment(null);
