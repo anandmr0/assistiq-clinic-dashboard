@@ -80,7 +80,10 @@ const AddWalkInModal = ({ loading, initData = {}, onClose, onSuccess }) => {
     }
     const payload = {
         doctorId: Number(formData.doctorId),
-        appointmentDate: formData.appointmentDate,
+        appointmentDate:
+        formData.appointmentDate === "custom"
+          ? formData.customDate
+          : getNormalizedDate(formData.appointmentDate),
         slot: formData.slot.toUpperCase(),   // 🔥 IMPORTANT
         patientName: formData.patientName,
         phoneNumber: formData.phoneNumber,
@@ -139,7 +142,20 @@ const getAppointmentDateOptions = () => {
       { value: 'custom', label: 'Custom Date' }
     ];
   };
-
+ // Normalize date for backend
+ const getNormalizedDate = (value) => {
+  const today = new Date();
+  switch (value) {
+    case "today":
+      return today.toISOString().split("T")[0];
+    case "tomorrow":
+      const tmr = new Date(today);
+      tmr.setDate(today.getDate() + 1);
+      return tmr.toISOString().split("T")[0];
+    default:
+      return value; // day after or custom
+  }
+};
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
