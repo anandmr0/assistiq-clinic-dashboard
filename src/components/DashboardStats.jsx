@@ -5,7 +5,7 @@ const DashboardStats = ({ data }) => {
   const stats = [
     {
       label: 'Total Patients',
-      value: data.totalPatients || 0,
+      value: data?.allAppointments?.length || 0,
       color: 'blue',
       icon: (
         <svg viewBox="0 0 24 24" fill="none">
@@ -17,7 +17,7 @@ const DashboardStats = ({ data }) => {
     },
     {
       label: 'Completed',
-      value: data.completedToday || 0,
+      value: data?.completedAppointments?.length || 0,
       color: 'green',
       icon: (
         <svg viewBox="0 0 24 24" fill="none">
@@ -28,8 +28,8 @@ const DashboardStats = ({ data }) => {
       )
     },
     {
-      label: 'Pending',
-      value: data.pendingToday || 0,
+      label: 'Active',
+      value: data?.todayPatients?.length || 0,
       color: 'amber',
       icon: (
         <svg viewBox="0 0 24 24" fill="none">

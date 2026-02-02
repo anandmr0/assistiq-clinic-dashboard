@@ -177,12 +177,12 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
     
     //alert(`Consultation completed for ${patient.name}!\n\nSymptoms: ${data.symptoms || 'N/A'}\nPrescriptions: ${(data.prescriptions || []).length} medicine(s)\nNext Visit: ${data.nextVisitDate || 'Not set'}`);
     try {
-      const res = await fetch("http:localhost:8080/api/appointments/complete", {
+      const res = await apiFetch("/appointments/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error();
+     // if (!res.ok) throw new Error();
 
       alert("Consultation saved & appointment completed");
       setExpandedAppointment(null);
@@ -326,7 +326,13 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
                         <span>Token: #{patient.tokenNumber}</span>
                       </div>
                     </div>
-                    
+                    <div className="meta-item">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M8 7V3M16 7V3M4 11H20M5 5H19C20.1046 5 21 5.89543 21 7V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V7C3 5.89543 3.89543 5 5 5Z"
+                          stroke="currentColor" strokeWidth="2"/>
+                      </svg>
+                      <span>Appointment Date:{patient.appointmentDate}</span>
+                    </div>
                     {patient.reason && (
                       <div className="patient-reason">
                         <svg viewBox="0 0 24 24" fill="none">

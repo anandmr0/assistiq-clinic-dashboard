@@ -1,7 +1,7 @@
 
 import { apiFetch } from "./apiConfig";
 const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:8080/api";
+  process.env.REACT_APP_API_BASE_URL || "https://assistiq-whatsapp-bot.onrender.com/api";
 
 export const fetchDashboardData = async (doctorId, clinicId) => {
   try {
@@ -13,60 +13,51 @@ export const fetchDashboardData = async (doctorId, clinicId) => {
 
      //const appointments = await response.json();
      console.log("appointments"+appointments)
-     const todayStr = new Date().toISOString().split('T')[0];
+     const todayStr = new Date().toISOString().split("T")[0];
 
-     // Appointments for today or future
-     const upcomingAppointments = appointments.filter(
-       (a) => a.appointmentDate >= todayStr
-     );
+     // Doctor Info
+     const doctorInfo = appointments?.length ? appointments[0].doctor : null;
  
-     const doctorInfo = upcomingAppointments.length > 0 ? upcomingAppointments[0].doctor : null;
+     // Map ALL appointments to UI-safe structure
+     const mappedAppointments = (appointments || []).map(a => ({
+       patientId: a.patient?.id,
+       appointmentId: a.id,
+       name: a.patient?.name || "Unknown",
+       phoneNumber: a.patient?.phone || "",
+       tokenNumber: a.tokenNumber || "",
+       status: a.status || "SCHEDULED",
+       age: a.patient?.age || "",
+       reason: a.notes || "N/A",
+       symptoms: a.symptoms || "",
+       diagnosis: a.diagnosis || "",
+       nextVisitDate: a.nextVisitDate || "",
+       nextVisitNotes: a.nextVisitNotes || "",
+       prescriptions: a.prescriptions || [],
+       appointmentDate: a.appointmentDate
+     }));
  
      return {
        doctor: doctorInfo,
-       totalPatients: upcomingAppointments.length,
  
-       // Today appointments only
-       activeAppointments: upcomingAppointments.filter(
-         (a) => a.appointmentDate === todayStr && a.status !== 'COMPLETED'
-       ),
+       // TOP CARDS (today only)
+       todayPatients: mappedAppointments.filter(a => a.appointmentDate === todayStr),
  
-       // Completed today or future
-       completedAppointments: upcomingAppointments.filter(
-         (a) => a.status === 'COMPLETED'
-       ),
+       // TABS (ALL DATES)
+       activeAppointments: mappedAppointments.filter(a => a.status !== "COMPLETED"),
+       completedAppointments: mappedAppointments.filter(a => a.status === "COMPLETED"),
+       allAppointments: mappedAppointments,
  
-       // All today or future
-       allAppointments: upcomingAppointments,
- 
-       // Optional: today-only mapping for UI
-       todayPatients: upcomingAppointments
-         .filter((a) => a.appointmentDate === todayStr)
-         .map((a) => ({
-           patientId: a.patient.id,
-           appointmentId: a.id,
-           name: a.patient.name,
-           phoneNumber: a.patient.phone,
-           tokenNumber: a.tokenNumber,
-           status: a.status,
-           age: a.patient.age,
-           reason: a.notes || 'N/A',
-           symptoms: a.symptoms || '',
-           diagnosis: a.diagnosis || '',
-           nextVisitDate: a.nextVisitDate || '',
-           nextVisitNotes: a.nextVisitNotes || '',
-           prescriptions: a.prescriptions || [],
-         }))
+       totalPatients: mappedAppointments.length
      };
    } catch (error) {
-     console.error('Dashboard API error:', error);
+     console.error("Dashboard API error:", error);
      return {
        doctor: null,
-       totalPatients: 0,
+       todayPatients: [],
        activeAppointments: [],
        completedAppointments: [],
        allAppointments: [],
-       todayPatients: []
+       totalPatients: 0
      };
    }
  };

@@ -42,6 +42,7 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
     console.log('Selected patient:', patient);
     alert(`Selected: ${patient.name}`);
   };
+ 
 
   if (loading) {
     return (
@@ -77,9 +78,9 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
           <>
             <DashboardStats data={dashboardData} />
             <PatientList
-               patients={dashboardData.todayPatients}
+               patients={dashboardData?.allAppointments || []}
                onPatientSelect={handlePatientSelect}
-               onRefreshAppointments={loadDashboard}
+               onRefreshAppointments={() => loadDashboard(doctorId, clinicId)}
                updatePatientStatus={updatePatientStatus}
                doctorId={doctorId}
                clinicId={clinicId}
