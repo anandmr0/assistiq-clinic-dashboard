@@ -2,7 +2,7 @@ import React, { useState,useEffect,useMemo   } from 'react';
 import '../css/PatientList.css';
 import AddWalkInModal from './AddWalkInModal';
 import { apiFetch } from "../services/apiConfig";
-const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
+const PatientList = ({ patients,  todayPatients, activePatients, completedPatients,onPatientSelect,  onRefreshAppointments,
   updatePatientStatus,doctorId,clinicId,doctors = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('confirmed');
@@ -12,11 +12,43 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
   const [walkInInitData, setWalkInInitData] = useState(null);
   const [savingAppointmentId, setSavingAppointmentId] = useState(null);
   const [loadingWalkIn, setLoadingWalkIn] = useState(false);
-
-
+  const [isRefreshing, setIsRefreshing] = useState(false);
+   // New state for lab tests collapse and pagination
+  const [labTestsExpanded, setLabTestsExpanded] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const testsPerPage = 6;
+ // Pagination state for patient list
+  const [patientCurrentPage, setPatientCurrentPage] = useState(1);
+  const patientsPerPage = 10;
   useEffect(() => {
     setExpandedAppointment(null);
+    setPatientCurrentPage(1);
   }, [searchTerm, filterStatus]);
+
+  useEffect(() => {
+    if (!patients?.length) return;
+  
+    setPatientData(prev => {
+      const updated = { ...prev };
+  
+      patients.forEach(patient => {
+        if (!patient.patientId) return;
+  
+        const existing = updated[patient.patientId] || {};
+  
+        updated[patient.patientId] = {
+          ...existing,
+          selectedTests: Array.isArray(patient.selectedTests)
+            ? patient.selectedTests
+            : existing.selectedTests || []
+        };
+      });
+  
+      return updated;
+    });
+  }, [patients]);
+  
+  
   const getEmptyPrescription = () => ({
     medicineName: '',
     dosage: '',
@@ -25,7 +57,17 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
     timing: 'after_food',
     notes: ''
   });
-  const filteredPatients = patients.filter(patient => {
+   const getBasePatients = () => {
+    if (filterStatus === 'confirmed') {
+      return activePatients || []; // Today's active patients
+    } else if (filterStatus === 'completed') {
+      return completedPatients || []; // Today's completed patients
+    } else if (filterStatus === 'all') {
+      return patients || []; // All appointments (history)
+    }
+    return [];
+  };
+  const filteredPatients = getBasePatients().filter(patient => {
     const name = patient.name?.toLowerCase() || "";
     const phone = (patient.phoneNumber || "").toString();
   const term = searchTerm.toLowerCase().trim();
@@ -48,6 +90,29 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
   
     return matchesSearch && matchesStatus;
   });
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
+  const startIndex = (patientCurrentPage - 1) * patientsPerPage;
+  const endIndex = startIndex + patientsPerPage;
+  const paginatedPatients = filteredPatients.slice(startIndex, endIndex);
+
+  // Pagination handlers
+  const goToPage = (pageNumber) => {
+    setPatientCurrentPage(pageNumber);
+    setExpandedAppointment(null); // Close any expanded patient when changing pages
+  };
+
+  const nextPage = () => {
+    if (patientCurrentPage < totalPages) {
+      goToPage(patientCurrentPage + 1);
+    }
+  };
+
+  const prevPage = () => {
+    if (patientCurrentPage > 1) {
+      goToPage(patientCurrentPage - 1);
+    }
+  };
   const openWalkInModal = async () => {
     setLoadingWalkIn(true);
     setShowWalkInModal(true); // open modal immediately with loader
@@ -67,13 +132,24 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
       setLoadingWalkIn(false);
     }
   };
-  
-  const handleToggleExpand = (patient, e) => {
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await onRefreshAppointments();
+    } catch (error) {
+      console.error('Error refreshing:', error);
+      alert('Failed to refresh appointments');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+    const handleToggleExpand = (patient, e) => {
     e.stopPropagation();
     const isOpening = expandedAppointment !== patient.appointmentId;
     setExpandedAppointment(isOpening ? patient.appointmentId : null);
-   
+
     if (isOpening) {
+      // Auto-populate data from database
       setPatientData(prev => ({
         ...prev,
         [patient.patientId]: {
@@ -83,9 +159,17 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
           nextVisitNotes: patient.nextVisitNotes || "",
           prescriptions: patient.prescriptions?.length
             ? patient.prescriptions
-            : [getEmptyPrescription()]
+            : [getEmptyPrescription()],
+          // Auto-select tests from DB
+          selectedTests: patient.selectedTests || [],
+          // Auto-populate reports from DB
+          reports: patient.reports || [],
+          sendPrescriptionToPatient: patient.prescriptionSent || false
         }
       }));
+      
+      // Reset pagination when opening
+      setCurrentPage(1);
     }
   };
 
@@ -149,6 +233,109 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
       };
     });
   };
+
+  // Handle report file upload
+  // Handle report file upload with base64 conversion
+ const handleReportUpload = async (patientId, file) => {
+    if (!file) return;
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    if (file.type !== 'application/pdf') {
+      alert('Only PDF files are allowed');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('patientId', patientId);
+
+      // Store locally with base64 for now
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPatientData(prev => {
+          const patientInfo = prev[patientId] || {};
+          const reports = patientInfo.reports || [];
+
+          return {
+            ...prev,
+            [patientId]: {
+              ...patientInfo,
+              reports: [
+                ...reports,
+                {
+                  id: Date.now(),
+                  name: file.name,
+                  size: file.size,
+                  uploadDate: new Date().toISOString(),
+                  url: e.target.result
+                }
+              ]
+            }
+          };
+        });
+      };
+      reader.readAsDataURL(file);
+
+      alert('Report uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading report:', error);
+      alert('Failed to upload report');
+    }
+  };
+  const handleRemoveReport = async (patientId, reportId) => {
+    try {
+      // Call backend to delete report
+      await apiFetch(`/dashboard/reports/${reportId}`, {
+        method: 'DELETE'
+      });
+
+      // Update local state
+      setPatientData(prev => {
+        const patientInfo = prev[patientId] || {};
+        const reports = (patientInfo.reports || []).filter(r => r.id !== reportId);
+
+        return {
+          ...prev,
+          [patientId]: {
+            ...patientInfo,
+            reports
+          }
+        };
+      });
+
+      alert('Report deleted successfully');
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      alert('Failed to delete report');
+    }
+  };
+  // Handle test selection
+  // Handle test selection
+  const handleTestToggle = (patientId, testName) => {
+    setPatientData(prev => {
+      const patientInfo = prev[patientId] || {};
+      const selectedTests = patientInfo.selectedTests || [];
+
+      const isSelected = selectedTests.includes(testName);
+      const updatedTests = isSelected
+        ? selectedTests.filter(t => t !== testName)
+        : [...selectedTests, testName];
+
+      return {
+        ...prev,
+        [patientId]: {
+          ...patientInfo,
+          selectedTests: updatedTests
+        }
+      };
+    });
+  };
   // const loadAppointments = async () => {
   //   const data = await fetchDashboardData(doctorId, clinicId);
   //   setPatients(data.todayPatients);
@@ -157,6 +344,15 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
   // useEffect(() => {
   //   loadAppointments();
   // }, []);
+
+    // Toggle lab tests section
+  const toggleLabTests = (patientId) => {
+    setLabTestsExpanded(prev => ({
+      ...prev,
+      [patientId]: !prev[patientId]
+    }));
+    setCurrentPage(1); // Reset to first page when toggling
+  };
   const handleMarkComplete = async (patient) => {
     const data = patientData[patient.patientId] || {};
     setSavingAppointmentId(patient.appointmentId);
@@ -173,6 +369,9 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
       nextVisitDate: data.nextVisitDate || null,
       nextVisitNotes: data.nextVisitNotes || "",
       prescriptions: cleanPrescriptions,
+      reports: data.reports || [],
+      selectedTests: data.selectedTests || [],
+      sendPrescriptionToPatient: data.sendPrescriptionToPatient || false
     };
     
     //alert(`Consultation completed for ${patient.name}!\n\nSymptoms: ${data.symptoms || 'N/A'}\nPrescriptions: ${(data.prescriptions || []).length} medicine(s)\nNext Visit: ${data.nextVisitDate || 'Not set'}`);
@@ -186,12 +385,20 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
 
       alert("Consultation saved & appointment completed");
       setExpandedAppointment(null);
-      setPatientData(prev => ({
-      ...prev,
-      [patient.patientId]: {}
-    }));
-    await onRefreshAppointments();
+    //   setPatientData(prev => ({
+    //   ...prev,
+    //   [patient.patientId]: {}
+    // }));
+    setPatientData((prev) => {
+      const updated = { ...prev };
+      delete updated[patient.patientId];
+      return updated;
+    });
+    if (onRefreshAppointments) {
+      onRefreshAppointments();
+    }
   } catch (err) {
+    console.error(err);
     alert("Failed to save consultation");
 
   }
@@ -211,6 +418,24 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
     };
     return colors[status] || 'status-scheduled';
   };
+   // Available lab tests - industry standard
+   const availableTests = [
+    { id: 'cbc', name: 'Complete Blood Count (CBC)', category: 'Blood Test', common: true },
+    { id: 'fbs', name: 'Fasting Blood Sugar (FBS)', category: 'Blood Test', common: true },
+    { id: 'ppbs', name: 'Post Prandial Blood Sugar (PPBS)', category: 'Blood Test', common: true },
+    { id: 'hba1c', name: 'HbA1c (Glycated Hemoglobin)', category: 'Blood Test', common: true },
+    { id: 'lipid', name: 'Lipid Profile', category: 'Blood Test', common: true },
+    { id: 'thyroid', name: 'Thyroid Profile (T3, T4, TSH)', category: 'Blood Test', common: true },
+    { id: 'lft', name: 'Liver Function Test (LFT)', category: 'Blood Test', common: true },
+    { id: 'kft', name: 'Kidney Function Test (KFT)', category: 'Blood Test', common: true },
+    { id: 'urine', name: 'Urine Routine & Microscopy', category: 'Urine Test', common: true },
+    { id: 'xray_chest', name: 'X-Ray Chest', category: 'Imaging', common: false },
+    { id: 'ultrasound', name: 'Ultrasound Abdomen', category: 'Imaging', common: false },
+    { id: 'ecg', name: 'ECG (Electrocardiogram)', category: 'Cardiac', common: true },
+    { id: 'echo', name: '2D Echo', category: 'Cardiac', common: false },
+    { id: 'vitamin_d', name: 'Vitamin D', category: 'Blood Test', common: false },
+    { id: 'vitamin_b12', name: 'Vitamin B12', category: 'Blood Test', common: false }
+  ];
 
   return (
     <div className="patient-list-container">
@@ -226,6 +451,21 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
           <div className="patient-count">
             {filteredPatients.length} Patients
           </div>
+          <button 
+            className="refresh-btn" 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <svg 
+              viewBox="0 0 24 24" 
+              fill="none"
+              style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }}
+            >
+              <path d="M1 4V10H7M23 20V14H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M20.49 9C19.9828 7.56678 19.1209 6.28536 17.9845 5.27542C16.8482 4.26548 15.4745 3.55976 13.9917 3.22426C12.5089 2.88875 10.9652 2.93434 9.50481 3.35677C8.04437 3.77921 6.71475 4.56471 5.64 5.64L1 10M23 14L18.36 18.36C17.2853 19.4353 15.9556 20.2208 14.4952 20.6432C13.0348 21.0657 11.4911 21.1112 10.0083 20.7757C8.52547 20.4402 7.1518 19.7345 6.01547 18.7246C4.87913 17.7146 4.01717 16.4332 3.51 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
         </div>
       </div>
 
@@ -285,13 +525,20 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
           <p>Try adjusting your search or filters</p>
         </div>
       ) : (
+        <>
         <div className="patient-list">
-          {filteredPatients.map((patient, index) => {
+          {paginatedPatients.map((patient, index) => {
             const isExpanded = expandedAppointment === patient.appointmentId;
             const data = patientData[patient.patientId] || {};
             const prescriptions = data.prescriptions || [getEmptyPrescription()];
             const isConsultationLocked =
             patient.status === "COMPLETED" || patient.status === "CANCELLED";
+            const isLabTestsExpanded = labTestsExpanded[patient.patientId] || false;
+             // Pagination logic for tests
+            const totalPages = Math.ceil(availableTests.length / testsPerPage);
+            const startIndex = (currentPage - 1) * testsPerPage;
+            const endIndex = startIndex + testsPerPage;
+            const paginatedTests = availableTests.slice(startIndex, endIndex);
             return (
               <div 
               key={`${patient.patientId}-${patient.appointmentId || ''}`}
@@ -392,7 +639,171 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
                       onChange={(e) => handleInputChange(patient.patientId, 'diagnosis', e.target.value)}
                     />
                     </div>
+                     {/* Lab Tests Section - Collapsible with Pagination */}
+                     <div className="consultation-section">
+                      <div className="section-heading-with-toggle">
+                        <h4 className="section-heading">
+                          <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M7 21H17M10 21V7L8 2H16L14 7V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M10 11H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          </svg>
+                          Recommended Lab Tests (Optional)
+                          {data.selectedTests && data.selectedTests.length > 0 && (
+                            <span className="selected-count">{data.selectedTests.length} selected</span>
+                          )}
+                        </h4>
+                        <button 
+                          className="collapse-toggle-btn"
+                          onClick={() => toggleLabTests(patient.patientId)}
+                          disabled={isConsultationLocked}
+                        >
+                          <svg 
+                            viewBox="0 0 24 24" 
+                            fill="none"
+                            style={{ transform: isLabTestsExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                          >
+                            <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2"/>
+                          </svg>
+                          {isLabTestsExpanded ? 'Collapse' : 'Expand'}
+                        </button>
+                      </div>
+                      
+                      {isLabTestsExpanded && (
+                        <>
+                          <div className="tests-grid">
+                            {paginatedTests.map(test => (
+                              <label key={test.id} className="test-checkbox-label">
+                                <input
+                                  type="checkbox"
+                                  checked={(data.selectedTests || []).includes(test.name)}
+                                  onChange={() => handleTestToggle(patient.patientId, test.name)}
+                                  disabled={isConsultationLocked}
+                                />
+                                <span className="test-checkbox-text">
+                                  <strong>{test.name}</strong>
+                                  <small>{test.category}</small>
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                          
+                          {/* Pagination Controls */}
+                          {totalPages > 1 && (
+                            <div className="pagination-controls">
+                              <button
+                                className="pagination-btn"
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none">
+                                  <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2"/>
+                                </svg>
+                                Previous
+                              </button>
+                              
+                              <div className="pagination-info">
+                                <span>Page {currentPage} of {totalPages}</span>
+                                <small>{startIndex + 1}-{Math.min(endIndex, availableTests.length)} of {availableTests.length} tests</small>
+                              </div>
+                              
+                              <button
+                                className="pagination-btn"
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages}
+                              >
+                                Next
+                                <svg viewBox="0 0 24 24" fill="none">
+                                  <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2"/>
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    
 
+                    </div>
+                    {/* Reports Section */}
+                   {/*  <div className="consultation-section">
+                      <h4 className="section-heading">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2"/>
+                          <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2"/>
+                        </svg>
+                        Patient Reports (Optional - PDF only, max 5MB)
+                      </h4>
+                      
+                      <div className="reports-section">
+                        {!isConsultationLocked && (
+                          <div className="upload-area">
+                            <input
+                              type="file"
+                              id={`report-upload-${patient.patientId}`}
+                              accept=".pdf"
+                              onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  handleReportUpload(patient.patientId, file);
+                                  e.target.value = null;
+                                }
+                              }}
+                              style={{ display: 'none' }}
+                            />
+                            <label 
+                              htmlFor={`report-upload-${patient.patientId}`}
+                              className="upload-btn"
+                            >
+                              <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" strokeWidth="2"/>
+                                <path d="M17 8L12 3L7 8" stroke="currentColor" strokeWidth="2"/>
+                                <path d="M12 3V15" stroke="currentColor" strokeWidth="2"/>
+                              </svg>
+                              Upload PDF Report
+                            </label>
+                          </div>
+                        )}
+
+                        {data.reports && data.reports.length > 0 && (
+                          <div className="reports-list">
+                            {data.reports.map(report => (
+                              <div key={report.id} className="report-item">
+                                <svg viewBox="0 0 24 24" fill="none" className="report-icon">
+                                  <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2"/>
+                                  <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2"/>
+                                </svg>
+                                <div className="report-info">
+                                  <span className="report-name">{report.name}</span>
+                                  <span className="report-size">{(report.size / 1024).toFixed(1)} KB</span>
+                                </div>
+                                <div className="report-actions">
+                                  <a 
+                                    href={report.url} 
+                                    download={report.name}
+                                    className="report-action-btn download-btn"
+                                  >
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                      <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" strokeWidth="2"/>
+                                      <path d="M7 10L12 15L17 10" stroke="currentColor" strokeWidth="2"/>
+                                      <path d="M12 15V3" stroke="currentColor" strokeWidth="2"/>
+                                    </svg>
+                                  </a>
+                                  {!isConsultationLocked && (
+                                    <button
+                                      onClick={() => handleRemoveReport(patient.patientId, report.id)}
+                                      className="report-action-btn delete-btn"
+                                    >
+                                      <svg viewBox="0 0 24 24" fill="none">
+                                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2"/>
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>*/}
                     {/* Prescription Section */}
                     <div className="consultation-section">
                       <div className="section-header-with-button">
@@ -516,8 +927,27 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
                           </div>
                         ))}
                       </div>
+                     {/* Send Prescription Checkbox */}
+                     {!isConsultationLocked && (
+                        <div className="send-prescription-section">
+                          <label className="send-prescription-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={data.sendPrescriptionToPatient || false}
+                              onChange={(e) => handleInputChange(patient.patientId, 'sendPrescriptionToPatient', e.target.checked)}
+                            />
+                            <span className="checkbox-label">
+                              <svg viewBox="0 0 24 24" fill="none" className="whatsapp-icon">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" fill="currentColor"/>
+                              </svg>
+                              <strong>Send prescription to patient via WhatsApp</strong>
+                              <small>Patient will receive prescription details on registered number</small>
+                            </span>
+                          </label>
+                        </div>
+                      )}
                     </div>
-
+                                  
                     {/* Next Visit Reminder */}
                     <div className="consultation-section">
                       <h4 className="section-heading">
@@ -591,19 +1021,79 @@ const PatientList = ({ patients, onPatientSelect,  onRefreshAppointments,
             );
           })}
         </div>
+        </>
       )}
+
+      {/* Pagination Controls */}
+        {filteredPatients.length > patientsPerPage && (
+          <div className="pagination-controls">
+            <button 
+              className="pagination-btn" 
+              onClick={prevPage}
+              disabled={patientCurrentPage === 1}
+            >
+              <svg viewBox="0 0 24 24" fill="none" style={{width: '20px', height: '20px'}}>
+                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Previous
+            </button>
+            
+            <div className="pagination-numbers">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                // Show first page, last page, current page, and pages around current
+                const showPage = 
+                  pageNum === 1 ||
+                  pageNum === totalPages ||
+                  (pageNum >= patientCurrentPage - 1 && pageNum <= patientCurrentPage + 1);
+                
+                const showEllipsis = 
+                  (pageNum === 2 && patientCurrentPage > 3) ||
+                  (pageNum === totalPages - 1 && patientCurrentPage < totalPages - 2);
+                
+                if (!showPage && !showEllipsis) return null;
+                
+                if (showEllipsis) {
+                  return <span key={pageNum} className="pagination-ellipsis">...</span>;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    className={`pagination-number ${patientCurrentPage === pageNum ? 'active' : ''}`}
+                    onClick={() => goToPage(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <button 
+              className="pagination-btn" 
+              onClick={nextPage}
+              disabled={patientCurrentPage === totalPages}
+            >
+              Next
+              <svg viewBox="0 0 24 24" fill="none" style={{width: '20px', height: '20px'}}>
+                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        )}
+      
 
       {/* Walk-in Modal */}
       {showWalkInModal && (
         <AddWalkInModal
-        loading={loadingWalkIn}
-        initData={walkInInitData}
-        onClose={() => setShowWalkInModal(false)}
-        onSuccess={onRefreshAppointments}
+          loading={loadingWalkIn}
+          initData={walkInInitData}
+          onClose={() => setShowWalkInModal(false)}
+          onSuccess={onRefreshAppointments}
         />
       )}
     </div>
   );
 };
+
 
 export default PatientList;

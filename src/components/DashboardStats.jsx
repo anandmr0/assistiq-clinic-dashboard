@@ -29,7 +29,7 @@ const DashboardStats = ({ data }) => {
     },
     {
       label: 'Active',
-      value: data?.todayPatients?.length || 0,
+      value: data?.activeAppointments?.length || 0,
       color: 'amber',
       icon: (
         <svg viewBox="0 0 24 24" fill="none">

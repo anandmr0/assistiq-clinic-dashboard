@@ -67,7 +67,7 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
             <div className="doctor-text">
             <h1>{dashboardData?.doctor?.name || 'Doctor'}</h1>
               <p className="specialization">  {dashboardData?.doctor?.specialization || ''}</p>
-              <p className="clinic-name">City Health Clinic</p>
+              <p className="clinic-name">{dashboardData?.doctor?.clinicName|| '' }</p>
             </div>
           </div>
         </div>
@@ -79,6 +79,9 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
             <DashboardStats data={dashboardData} />
             <PatientList
                patients={dashboardData?.allAppointments || []}
+                todayPatients={dashboardData?.todayPatients || []}
+                activePatients={dashboardData?.activeAppointments || []}
+                completedPatients={dashboardData?.completedAppointments || []}
                onPatientSelect={handlePatientSelect}
                onRefreshAppointments={() => loadDashboard(doctorId, clinicId)}
                updatePatientStatus={updatePatientStatus}

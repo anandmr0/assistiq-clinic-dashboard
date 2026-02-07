@@ -12,9 +12,13 @@ export const fetchDashboardData = async (doctorId, clinicId) => {
     
 
      //const appointments = await response.json();
+     const normalizeStatus = (s) => (s || "").toUpperCase();
      console.log("appointments"+appointments)
      const todayStr = new Date().toISOString().split("T")[0];
-
+      const isToday = (dateStr) => {
+        if (!dateStr) return false;
+        return new Date(dateStr).toISOString().split("T")[0] === todayStr;
+      };
      // Doctor Info
      const doctorInfo = appointments?.length ? appointments[0].doctor : null;
  
@@ -33,21 +37,57 @@ export const fetchDashboardData = async (doctorId, clinicId) => {
        nextVisitDate: a.nextVisitDate || "",
        nextVisitNotes: a.nextVisitNotes || "",
        prescriptions: a.prescriptions || [],
+       prescriptionSent: a.prescriptionSent || false,
+        // Prescriptions - map from backend
+      prescriptions: (a.prescriptions || []).map(p => ({
+        id: p.id,
+        medicineName: p.medicineName || "",
+        dosage: p.dosage || "",
+        frequency: p.frequency || "once_daily",
+        duration: p.duration || "",
+        timing: p.timing || "after_food",
+        notes: p.notes || ""
+      })),
+       // Reports - map from backend with proper URL
+      reports: (a.reports || []).map(r => ({
+        id: r.id,
+        name: r.name,
+        size: r.size,
+        uploadDate: r.uploadDate,
+        url: r.url  // Backend should provide download URL
+      })),
+        selectedTests: a.selectedTests || [],
        appointmentDate: a.appointmentDate
      }));
- 
+        const todayAppointments = mappedAppointments.filter(a => isToday(a.appointmentDate));
+
+      // 🔹 Today's ACTIVE (not completed or cancelled)
+      const todayActiveAppointments = todayAppointments.filter(a => {
+        const status = normalizeStatus(a.status);
+        return status !== "COMPLETED" && status !== "CANCELLED";
+      });
+
+      // 🔹 Today's COMPLETED
+      const todayCompletedAppointments = todayAppointments.filter(a =>
+        normalizeStatus(a.status) === "COMPLETED"
+      );
+
+      console.log("TODAY:", todayStr);
+      console.log("TODAY APPOINTMENTS:", todayAppointments);
+      console.log("TODAY ACTIVE:", todayActiveAppointments);
+
      return {
-       doctor: doctorInfo,
- 
-       // TOP CARDS (today only)
-       todayPatients: mappedAppointments.filter(a => a.appointmentDate === todayStr),
- 
-       // TABS (ALL DATES)
-       activeAppointments: mappedAppointments.filter(a => a.status !== "COMPLETED"),
-       completedAppointments: mappedAppointments.filter(a => a.status === "COMPLETED"),
-       allAppointments: mappedAppointments,
- 
-       totalPatients: mappedAppointments.length
+        doctor: doctorInfo,
+
+  // ✅ UNIQUE PATIENT COUNTS
+  todayPatients: getUniquePatients(todayAppointments),
+  activeAppointments: getUniquePatients(todayActiveAppointments),
+  completedAppointments: getUniquePatients(todayCompletedAppointments),
+
+  // Full lists still available if needed
+  allAppointments: mappedAppointments,
+
+  totalPatients: getUniquePatients(mappedAppointments).length
      };
    } catch (error) {
      console.error("Dashboard API error:", error);
@@ -61,7 +101,15 @@ export const fetchDashboardData = async (doctorId, clinicId) => {
      };
    }
  };
-
+const getUniquePatients = (appointments) => {
+  const map = new Map();
+  appointments.forEach(a => {
+    if (a.patientId && !map.has(a.patientId)) {
+      map.set(a.patientId, a);
+    }
+  });
+  return Array.from(map.values());
+};
 export const fetchPatientDetails = async (patientId) => {
   const response = await apiFetch(`/patients/${patientId}`);
   if (!response.ok) throw new Error('Failed to fetch patient');
