@@ -104,8 +104,8 @@ export const fetchDashboardData = async (doctorId, clinicId) => {
 const getUniquePatients = (appointments) => {
   const map = new Map();
   appointments.forEach(a => {
-    if (a.patientId && !map.has(a.patientId)) {
-      map.set(a.patientId, a);
+    if (a.appointmentId && !map.has(a.appointmentId)) {
+      map.set(a.appointmentId, a);
     }
   });
   return Array.from(map.values());

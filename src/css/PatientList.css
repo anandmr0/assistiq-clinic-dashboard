@@ -53,7 +53,7 @@
   height: 18px;
 }
 
-.patient-count {
+.patient-count-mobile {
   background: var(--primary-blue);
   color: var(--white);
   padding: 0.5rem 1.25rem;
@@ -1652,7 +1652,7 @@
 }
 
 /* Update patient count display to show pagination info */
-.patient-count {
+.patient-count-mobile {
   font-size: 14px;
   font-weight: 600;
   color: #374151;
@@ -1715,10 +1715,113 @@
     padding: 8px;
   }
 
-  .patient-count {
+  .patient-count-mobile {
     font-size: 12px;
     width: 100%;
     justify-content: center;
     order: -1;
+  }
+}
+
+/* Mobile-responsive fixes for PatientList header buttons */
+
+/* Header actions container - make it responsive */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Mobile view - Stack buttons properly */
+@media (max-width: 768px) {
+  .patient-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .section-title {
+    width: 100%;
+  }
+
+  .header-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two equal columns */
+    grid-template-rows: auto auto;
+    gap: 0.75rem;
+  }
+
+  /* Hide patient count on mobile or move it elsewhere 
+  .patient-count-mobile {
+    display: none;
+  }*/
+
+  /* Make buttons equal width and symmetric */
+  .add-walkin-btn,
+  .refresh-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    min-height: 44px; /* Touch-friendly height */
+  }
+
+  /* Make Add Walk-in span full width on first row */
+  .add-walkin-btn {
+    grid-column: 1 / -1; /* Span both columns */
+  }
+
+  /* Alternative layout option - all buttons in one row */
+  .header-actions.inline-layout {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+  }
+
+  .header-actions.inline-layout .add-walkin-btn {
+    grid-column: auto; /* Reset to normal flow */
+  }
+
+  .header-actions.inline-layout .patient-count-mobile {
+    display: none;
+  }
+}
+
+/* Extra small mobile (phones in portrait) */
+@media (max-width: 480px) {
+  .header-actions {
+    gap: 0.5rem;
+  }
+
+  .add-walkin-btn,
+  .refresh-btn {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  .add-walkin-btn svg,
+  .refresh-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Tablet view - show all three items */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .header-actions {
+    gap: 0.75rem;
+  }
+
+  .patient-count-mobile {
+    display: flex;
+    flex: 0 0 auto;
+  }
+}
+
+/* Desktop view - original layout */
+@media (min-width: 1025px) {
+  .header-actions {
+    gap: 1rem;
   }
 }

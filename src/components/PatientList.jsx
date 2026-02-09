@@ -448,7 +448,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
             </svg>
             Add Walk-in
           </button>
-          <div className="patient-count">
+          <div className="patient-count-mobile">
             {filteredPatients.length} Patients
           </div>
           <button 
