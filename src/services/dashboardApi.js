@@ -31,6 +31,7 @@ export const fetchDashboardData = async (doctorId, clinicId) => {
        tokenNumber: a.tokenNumber || "",
        status: a.status || "SCHEDULED",
        age: a.patient?.age || "",
+       gender:a.patient?.gender || "",
        reason: a.notes || "N/A",
        symptoms: a.symptoms || "",
        diagnosis: a.diagnosis || "",

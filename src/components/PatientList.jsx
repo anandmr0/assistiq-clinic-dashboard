@@ -572,14 +572,60 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                         </svg>
                         <span>Token: #{patient.tokenNumber}</span>
                       </div>
-                    </div>
-                    <div className="meta-item">
+                      {/* Gender */}
+                      {patient.gender && (
+                        <div className="meta-item">
+                          <svg viewBox="0 0 24 24" fill="none">
+                            {(patient.gender === "MALE" || patient.gender === "Male") && (
+                              <path
+                                d="M16 2H22V8M22 2L13.5 10.5M10 22C13.3137 22 16 19.3137 16 16C16 12.6863 13.3137 10 10 10C6.68629 10 4 12.6863 4 16C4 19.3137 6.68629 22 10 22Z"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              />
+                            )}
+
+                            {(patient.gender === "FEMALE" || patient.gender === "Female" ) && (
+                              <path
+                                d="M12 14C15.3137 14 18 11.3137 18 8C18 4.68629 15.3137 2 12 2C8.68629 2 6 4.68629 6 8C6 11.3137 8.68629 14 12 14ZM12 14V22M9 19H15"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              />
+                            )}
+
+                            {patient.gender === "OTHER" || patient.gender === "Other" && (
+                              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+                            )}
+                          </svg>
+
+                          <span>{patient.gender}</span>
+                        </div>
+                      )}
+                      {/* Phone Number */}
+                        {patient.phoneNumber && (
+                          <div className="meta-item">
+                            <svg viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M3 5C3 4.44772 3.44772 4 4 4H7.28C7.7514 4 8.15521 4.33142 8.246 4.794L9.12 9.03C9.20588 9.44768 9.01945 9.8773 8.654 10.095L6.91 11.14C8.05 13.58 10.42 15.95 12.86 17.09L13.905 15.346C14.1227 14.9806 14.5523 14.7941 14.97 14.88L19.206 15.754C19.6686 15.8448 20 16.2486 20 16.72V20C20 20.5523 19.5523 21 19 21C10.716 21 3 13.284 3 5Z"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              />
+                            </svg>
+
+                            <span>
+                              ****{patient.phoneNumber.slice(-4)}
+                            </span>
+                          </div>
+                        )}
+                       <div className="meta-item">
                       <svg viewBox="0 0 24 24" fill="none">
                         <path d="M8 7V3M16 7V3M4 11H20M5 5H19C20.1046 5 21 5.89543 21 7V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V7C3 5.89543 3.89543 5 5 5Z"
                           stroke="currentColor" strokeWidth="2"/>
                       </svg>
                       <span>Appointment Date:{patient.appointmentDate}</span>
                     </div>
+
+                    </div>
+                   
                     {patient.reason && (
                       <div className="patient-reason">
                         <svg viewBox="0 0 24 24" fill="none">
