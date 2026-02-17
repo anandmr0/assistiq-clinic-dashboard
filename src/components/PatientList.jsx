@@ -2,6 +2,266 @@ import React, { useState,useEffect,useMemo   } from 'react';
 import '../css/PatientList.css';
 import AddWalkInModal from './AddWalkInModal';
 import { apiFetch } from "../services/apiConfig";
+const ChiefComplaintSection = ({ patient, data, handleInputChange, isLocked }) => (
+  <div className="consultation-section">
+    <h4 className="section-heading">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5" 
+          stroke="currentColor" strokeWidth="2"/>
+      </svg>
+      Chief Complaint
+      <span className="field-hint-inline">Main problem in brief</span>
+    </h4>
+    <input
+      type="text"
+      className="chief-complaint-input"
+      placeholder="E.g., Fever and headache for 3 days"
+      value={data.chiefComplaint || ''}
+      onChange={(e) => handleInputChange(patient.patientId, 'chiefComplaint', e.target.value)}
+      disabled={isLocked}
+    />
+  </div>
+);
+// Vital Signs Section
+const VitalSignsSection = ({ patient, data, handleInputChange, isLocked }) => {
+  const handleVitalChange = (field, value) => {
+    const vitalSigns = data.vitalSigns || {};
+    handleInputChange(patient.patientId, 'vitalSigns', {
+      ...vitalSigns,
+      [field]: value
+    });
+  };
+
+  const vitals = data.vitalSigns || {};
+
+  return (
+    <div className="consultation-section">
+      <h4 className="section-heading">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M22 12H18L15 21L9 3L6 12H2" 
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Vital Signs
+      </h4>
+      <div className="vitals-grid">
+        <div className="vital-field">
+          <label>
+            Blood Pressure
+            <span className="field-hint">mmHg</span>
+          </label>
+          <div className="bp-input-group">
+            <input
+              type="number"
+              placeholder="120"
+              value={vitals.systolic || ''}
+              onChange={(e) => handleVitalChange('systolic', e.target.value)}
+              disabled={isLocked}
+              min="0"
+              max="250"
+            />
+            <span className="bp-separator">/</span>
+            <input
+              type="number"
+              placeholder="80"
+              value={vitals.diastolic || ''}
+              onChange={(e) => handleVitalChange('diastolic', e.target.value)}
+              disabled={isLocked}
+              min="0"
+              max="150"
+            />
+          </div>
+        </div>
+
+        <div className="vital-field">
+          <label>
+            Pulse Rate
+            <span className="field-hint">bpm</span>
+          </label>
+          <input
+            type="number"
+            placeholder="72"
+            value={vitals.pulse || ''}
+            onChange={(e) => handleVitalChange('pulse', e.target.value)}
+            disabled={isLocked}
+            min="0"
+            max="200"
+          />
+        </div>
+
+        <div className="vital-field">
+          <label>
+            Temperature
+            <span className="field-hint">°F</span>
+          </label>
+          <input
+            type="number"
+            step="0.1"
+            placeholder="98.6"
+            value={vitals.temperature || ''}
+            onChange={(e) => handleVitalChange('temperature', e.target.value)}
+            disabled={isLocked}
+            min="95"
+            max="110"
+          />
+        </div>
+
+        <div className="vital-field">
+          <label>
+            Weight
+            <span className="field-hint">kg</span>
+          </label>
+          <input
+            type="number"
+            step="0.1"
+            placeholder="70"
+            value={vitals.weight || ''}
+            onChange={(e) => handleVitalChange('weight', e.target.value)}
+            disabled={isLocked}
+            min="0"
+            max="300"
+          />
+        </div>
+
+        <div className="vital-field">
+          <label>
+            Height
+            <span className="field-hint">cm</span>
+          </label>
+          <input
+            type="number"
+            placeholder="170"
+            value={vitals.height || ''}
+            onChange={(e) => handleVitalChange('height', e.target.value)}
+            disabled={isLocked}
+            min="0"
+            max="250"
+          />
+        </div>
+
+        <div className="vital-field">
+          <label>
+            SpO2
+            <span className="field-hint">%</span>
+          </label>
+          <input
+            type="number"
+            placeholder="98"
+            value={vitals.spo2 || ''}
+            onChange={(e) => handleVitalChange('spo2', e.target.value)}
+            disabled={isLocked}
+            min="0"
+            max="100"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+// Examination Findings Section
+const ExaminationFindingsSection = ({ patient, data, handleInputChange, isLocked }) => (
+  <div className="consultation-section">
+    <h4 className="section-heading">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" 
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      Examination Findings
+      <span className="field-hint-inline">Physical examination results</span>
+    </h4>
+    <textarea
+      className="consultation-textarea"
+      placeholder="E.g., General: Patient alert and oriented. Respiratory: Clear breath sounds bilaterally..."
+      rows="3"
+      value={data.examinationFindings || ''}
+      onChange={(e) => handleInputChange(patient.patientId, 'examinationFindings', e.target.value)}
+      disabled={isLocked}
+    />
+  </div>
+);
+// Treatment Advice Section
+const TreatmentAdviceSection = ({ patient, data, handleInputChange, isLocked }) => (
+  <div className="consultation-section">
+    <h4 className="section-heading">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" 
+          stroke="currentColor" strokeWidth="2"/>
+      </svg>
+      Treatment Advice & Instructions
+    </h4>
+    <div className="advice-grid">
+      <div className="advice-field">
+        <label>Dietary Instructions</label>
+        <textarea
+          className="advice-textarea"
+          placeholder="E.g., Avoid oily and spicy food, drink plenty of water..."
+          rows="2"
+          value={data.dietaryAdvice || ''}
+          onChange={(e) => handleInputChange(patient.patientId, 'dietaryAdvice', e.target.value)}
+          disabled={isLocked}
+        />
+      </div>
+
+      <div className="advice-field">
+        <label>Lifestyle Modifications</label>
+        <textarea
+          className="advice-textarea"
+          placeholder="E.g., Rest for 2-3 days, avoid strenuous activity..."
+          rows="2"
+          value={data.lifestyleAdvice || ''}
+          onChange={(e) => handleInputChange(patient.patientId, 'lifestyleAdvice', e.target.value)}
+          disabled={isLocked}
+        />
+      </div>
+
+      <div className="advice-field">
+        <label>General Instructions</label>
+        <textarea
+          className="advice-textarea"
+          placeholder="E.g., Complete full course of medication, maintain proper hygiene..."
+          rows="2"
+          value={data.generalAdvice || ''}
+          onChange={(e) => handleInputChange(patient.patientId, 'generalAdvice', e.target.value)}
+          disabled={isLocked}
+        />
+      </div>
+
+      <div className="advice-field">
+        <label>Warning Signs (When to Return)</label>
+        <textarea
+          className="advice-textarea"
+          placeholder="E.g., Return immediately if fever exceeds 103°F, difficulty breathing..."
+          rows="2"
+          value={data.warningAdvice || ''}
+          onChange={(e) => handleInputChange(patient.patientId, 'warningAdvice', e.target.value)}
+          disabled={isLocked}
+        />
+      </div>
+    </div>
+  </div>
+);
+// Internal Notes Section
+const InternalNotesSection = ({ patient, data, handleInputChange, isLocked }) => (
+  <div className="consultation-section internal-notes-section">
+    <h4 className="section-heading">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 15V17M6 21H18C19.1046 21 20 20.1046 20 19V5C20 3.89543 19.1046 3 18 3H6C4.89543 3 4 3.89543 4 5V19C4 20.1046 4.89543 21 6 21Z" 
+          stroke="currentColor" strokeWidth="2"/>
+        <path d="M8 7H16M8 11H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+      Internal Notes
+      <span className="private-badge">🔒 Private</span>
+      <span className="field-hint-inline">Not shared with patient</span>
+    </h4>
+    <textarea
+      className="consultation-textarea internal-notes-textarea"
+      placeholder="Private notes for doctor's reference only (not shared with patient)..."
+      rows="3"
+      value={data.internalNotes || ''}
+      onChange={(e) => handleInputChange(patient.patientId, 'internalNotes', e.target.value)}
+      disabled={isLocked}
+    />
+  </div>
+);
 const PatientList = ({ patients,  todayPatients, activePatients, completedPatients,onPatientSelect,  onRefreshAppointments,
   updatePatientStatus,doctorId,clinicId,doctors = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -364,25 +624,56 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
     );
     const payload = {
       appointmentId: patient.appointmentId,
-      symptoms: data.symptoms || "",
-      diagnosis: data.diagnosis || "",
-      nextVisitDate: data.nextVisitDate || null,
-      nextVisitNotes: data.nextVisitNotes || "",
-      prescriptions: cleanPrescriptions,
-      reports: data.reports || [],
-      selectedTests: data.selectedTests || [],
-      sendPrescriptionToPatient: data.sendPrescriptionToPatient || false
+
+  // Clinical data
+  chiefComplaint: data.chiefComplaint || "",
+  symptoms: data.symptoms || "",
+  diagnosis: data.diagnosis || "",
+  examinationFindings: data.examinationFindings || "",
+
+  // ✅ VITAL SIGNS FLATTENED
+  systolicBP: data.vitalSigns?.systolic || null,
+  diastolicBP: data.vitalSigns?.diastolic || null,
+  pulseRate: data.vitalSigns?.pulse || null,
+  temperature: data.vitalSigns?.temperature || null,
+  weight: data.vitalSigns?.weight || null,
+  height: data.vitalSigns?.height || null,
+  spo2: data.vitalSigns?.spo2 || null,
+
+  // ✅ INSTRUCTIONS
+  dietaryInstructions: data.dietaryAdvice || "",
+  lifestyleInstructions: data.lifestyleAdvice || "",
+  generalInstructions: data.generalAdvice || "",
+  warningSigns: data.warningAdvice || "",
+
+  // Prescription & tests
+  prescriptions: cleanPrescriptions,
+  reports: data.reports || [],
+  selectedTests: data.selectedTests || [],
+
+ 
+ 
+
+  // Next visit
+  nextVisitDate: data.nextVisitDate || null,
+  nextVisitNotes: data.nextVisitNotes || "",
+
+  // Internal
+  internalNotes: data.internalNotes || "",
+
+  sendPrescriptionToPatient: data.sendPrescriptionToPatient || false
     };
     
     //alert(`Consultation completed for ${patient.name}!\n\nSymptoms: ${data.symptoms || 'N/A'}\nPrescriptions: ${(data.prescriptions || []).length} medicine(s)\nNext Visit: ${data.nextVisitDate || 'Not set'}`);
     try {
+        console.log("Request Sent:", payload);
       const res = await apiFetch("/appointments/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
      // if (!res.ok) throw new Error();
-
+      console.log("Request Sent:", payload);
       alert("Consultation saved & appointment completed");
       setExpandedAppointment(null);
     //   setPatientData(prev => ({
@@ -418,6 +709,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
     };
     return colors[status] || 'status-scheduled';
   };
+  
    // Available lab tests - industry standard
    const availableTests = [
     { id: 'cbc', name: 'Complete Blood Count (CBC)', category: 'Blood Test', common: true },
@@ -592,7 +884,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                               />
                             )}
 
-                            {patient.gender === "OTHER" || patient.gender === "Other" && (
+                            {(patient.gender === "OTHER" || patient.gender === "Other") && (
                               <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
                             )}
                           </svg>
@@ -652,6 +944,21 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
 
                 {isExpanded && (
                   <div className="patient-expanded-content">
+                    {/* 1. NEW: Chief Complaint */}
+                      <ChiefComplaintSection 
+                        patient={patient}
+                        data={data}
+                        handleInputChange={handleInputChange}
+                        isLocked={isConsultationLocked}
+                      />
+
+                      {/* 2. NEW: Vital Signs */}
+                      <VitalSignsSection 
+                        patient={patient}
+                        data={data}
+                        handleInputChange={handleInputChange}
+                        isLocked={isConsultationLocked}
+                      />
                     {/* Symptoms Section */}
                     <div className="consultation-section">
                       <h4 className="section-heading">
@@ -684,6 +991,13 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                       value={data.diagnosis || ''}
                       onChange={(e) => handleInputChange(patient.patientId, 'diagnosis', e.target.value)}
                     />
+                     {/* 5. NEW: Examination Findings */}
+                      <ExaminationFindingsSection 
+                        patient={patient}
+                        data={data}
+                        handleInputChange={handleInputChange}
+                        isLocked={isConsultationLocked}
+                      />
                     </div>
                      {/* Lab Tests Section - Collapsible with Pagination */}
                      <div className="consultation-section">
@@ -993,7 +1307,13 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                         </div>
                       )}
                     </div>
-                                  
+                         {/* 9. NEW: Treatment Advice */}
+                      <TreatmentAdviceSection 
+                        patient={patient}
+                        data={data}
+                        handleInputChange={handleInputChange}
+                        isLocked={isConsultationLocked}
+                      />          
                     {/* Next Visit Reminder */}
                     <div className="consultation-section">
                       <h4 className="section-heading">
@@ -1020,7 +1340,13 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                         />
                       </div>
                     </div>
-
+{/* 11. NEW: Internal Notes */}
+                      <InternalNotesSection 
+                        patient={patient}
+                        data={data}
+                        handleInputChange={handleInputChange}
+                        isLocked={isConsultationLocked}
+                      />
                     {/* Action Buttons */}
                     <div className="consultation-actions">
                       <button
