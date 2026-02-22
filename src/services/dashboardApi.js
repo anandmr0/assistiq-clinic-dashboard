@@ -73,7 +73,18 @@ export const fetchDashboardData = async (doctorId, clinicId) => {
         url: r.url  // Backend should provide download URL
       })),
         selectedTests: a.selectedTests || [],
-       appointmentDate: a.appointmentDate
+        prescriptionSent: a.prescriptionSent || false,
+        
+       appointmentDate: a.appointmentDate,
+        canvasNotes: a.canvasNoteImage
+        ? [{
+            imageDataUrl: a.canvasNoteImage,
+            pdfDataUrl:   null,
+            createdAt:    a.canvasNoteCreatedAt || null,
+            visitDate:    a.appointmentDate     || a.canvasNoteCreatedAt || null,
+          }]
+        : [],
+       
      }));
         const todayAppointments = mappedAppointments.filter(a => isToday(a.appointmentDate));
 

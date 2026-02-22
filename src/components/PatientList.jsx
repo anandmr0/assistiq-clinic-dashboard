@@ -1,7 +1,10 @@
 import React, { useState,useEffect,useMemo   } from 'react';
 import '../css/PatientList.css';
 import AddWalkInModal from './AddWalkInModal';
+import PrescriptionPad, { buildPrescriptionHtml, getPrescriptionPageCss } from './PrescriptionPad';
+import CanvasNoteModal from './CanvasNoteModal';
 import { apiFetch } from "../services/apiConfig";
+import { generatePrescriptionPdfBase64 } from './PrescriptionPdfGenerator';
 const ChiefComplaintSection = ({ patient, data, handleInputChange, isLocked }) => (
   <div className="consultation-section">
     <h4 className="section-heading">
@@ -17,7 +20,7 @@ const ChiefComplaintSection = ({ patient, data, handleInputChange, isLocked }) =
       className="chief-complaint-input"
       placeholder="E.g., Fever and headache for 3 days"
       value={data.chiefComplaint || ''}
-      onChange={(e) => handleInputChange(patient.patientId, 'chiefComplaint', e.target.value)}
+      onChange={(e) => handleInputChange(patient.appointmentId, 'chiefComplaint', e.target.value)}
       disabled={isLocked}
     />
   </div>
@@ -26,7 +29,7 @@ const ChiefComplaintSection = ({ patient, data, handleInputChange, isLocked }) =
 const VitalSignsSection = ({ patient, data, handleInputChange, isLocked }) => {
   const handleVitalChange = (field, value) => {
     const vitalSigns = data.vitalSigns || {};
-    handleInputChange(patient.patientId, 'vitalSigns', {
+    handleInputChange(patient.appointmentId, 'vitalSigns', {
       ...vitalSigns,
       [field]: value
     });
@@ -173,7 +176,7 @@ const ExaminationFindingsSection = ({ patient, data, handleInputChange, isLocked
       placeholder="E.g., General: Patient alert and oriented. Respiratory: Clear breath sounds bilaterally..."
       rows="3"
       value={data.examinationFindings || ''}
-      onChange={(e) => handleInputChange(patient.patientId, 'examinationFindings', e.target.value)}
+      onChange={(e) => handleInputChange(patient.appointmentId, 'examinationFindings', e.target.value)}
       disabled={isLocked}
     />
   </div>
@@ -196,7 +199,7 @@ const TreatmentAdviceSection = ({ patient, data, handleInputChange, isLocked }) 
           placeholder="E.g., Avoid oily and spicy food, drink plenty of water..."
           rows="2"
           value={data.dietaryAdvice || ''}
-          onChange={(e) => handleInputChange(patient.patientId, 'dietaryAdvice', e.target.value)}
+          onChange={(e) => handleInputChange(patient.appointmentId, 'dietaryAdvice', e.target.value)}
           disabled={isLocked}
         />
       </div>
@@ -208,7 +211,7 @@ const TreatmentAdviceSection = ({ patient, data, handleInputChange, isLocked }) 
           placeholder="E.g., Rest for 2-3 days, avoid strenuous activity..."
           rows="2"
           value={data.lifestyleAdvice || ''}
-          onChange={(e) => handleInputChange(patient.patientId, 'lifestyleAdvice', e.target.value)}
+          onChange={(e) => handleInputChange(patient.appointmentId, 'lifestyleAdvice', e.target.value)}
           disabled={isLocked}
         />
       </div>
@@ -220,7 +223,7 @@ const TreatmentAdviceSection = ({ patient, data, handleInputChange, isLocked }) 
           placeholder="E.g., Complete full course of medication, maintain proper hygiene..."
           rows="2"
           value={data.generalAdvice || ''}
-          onChange={(e) => handleInputChange(patient.patientId, 'generalAdvice', e.target.value)}
+          onChange={(e) => handleInputChange(patient.appointmentId, 'generalAdvice', e.target.value)}
           disabled={isLocked}
         />
       </div>
@@ -232,7 +235,7 @@ const TreatmentAdviceSection = ({ patient, data, handleInputChange, isLocked }) 
           placeholder="E.g., Return immediately if fever exceeds 103°F, difficulty breathing..."
           rows="2"
           value={data.warningAdvice || ''}
-          onChange={(e) => handleInputChange(patient.patientId, 'warningAdvice', e.target.value)}
+          onChange={(e) => handleInputChange(patient.appointmentId, 'warningAdvice', e.target.value)}
           disabled={isLocked}
         />
       </div>
@@ -257,13 +260,13 @@ const InternalNotesSection = ({ patient, data, handleInputChange, isLocked }) =>
       placeholder="Private notes for doctor's reference only (not shared with patient)..."
       rows="3"
       value={data.internalNotes || ''}
-      onChange={(e) => handleInputChange(patient.patientId, 'internalNotes', e.target.value)}
+      onChange={(e) => handleInputChange(patient.appointmentId, 'internalNotes', e.target.value)}
       disabled={isLocked}
     />
   </div>
 );
 const PatientList = ({ patients,  todayPatients, activePatients, completedPatients,onPatientSelect,  onRefreshAppointments,
-  updatePatientStatus,doctorId,clinicId,doctors = [] }) => {
+  updatePatientStatus,doctorId,clinicId,doctors = [],doctorsInfo }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('confirmed');
   const [expandedAppointment, setExpandedAppointment] = useState(null);
@@ -277,6 +280,8 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
   const [labTestsExpanded, setLabTestsExpanded] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const testsPerPage = 6;
+    const [showPrescriptionPad, setShowPrescriptionPad] = useState(null);
+  const [showCanvasNote,      setShowCanvasNote]       = useState(null);
  // Pagination state for patient list
   const [patientCurrentPage, setPatientCurrentPage] = useState(1);
   const patientsPerPage = 10;
@@ -294,9 +299,9 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
       patients.forEach(patient => {
         if (!patient.patientId) return;
   
-        const existing = updated[patient.patientId] || {};
+        const existing = updated[patient.appointmentId] || {};
   
-        updated[patient.patientId] = {
+        updated[patient.appointmentId] = {
           ...existing,
           selectedTests: Array.isArray(patient.selectedTests)
             ? patient.selectedTests
@@ -412,7 +417,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
       // Auto-populate data from database
       setPatientData(prev => ({
         ...prev,
-        [patient.patientId]: {
+        [patient.appointmentId]: {
           symptoms: patient.symptoms || "",
           diagnosis: patient.diagnosis || "",
           nextVisitDate: patient.nextVisitDate || "",
@@ -424,7 +429,39 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
           selectedTests: patient.selectedTests || [],
           // Auto-populate reports from DB
           reports: patient.reports || [],
-          sendPrescriptionToPatient: patient.prescriptionSent || false
+          sendPrescriptionToPatient: patient.prescriptionSent || false,
+          // ── Clinical ──────────────────────────────────────────────────────
+          chiefComplaint:      patient.chiefComplaint      || "",
+          symptoms:            patient.symptoms            || "",
+          diagnosis:           patient.diagnosis           || "",
+          examinationFindings: patient.examinationFindings  || "",
+          internalNotes:       patient.internalNotes        || "",
+           // ── Vital signs — kept as nested object (matches VitalSignsSection) ──
+          vitalSigns: {
+            systolic:    patient.vitalSigns?.systolic    ?? null,
+            diastolic:   patient.vitalSigns?.diastolic   ?? null,
+            pulse:       patient.vitalSigns?.pulse       ?? null,
+            temperature: patient.vitalSigns?.temperature ?? null,
+            weight:      patient.vitalSigns?.weight      ?? null,
+            height:      patient.vitalSigns?.height      ?? null,
+            spo2:        patient.vitalSigns?.spo2        ?? null,
+          },
+           // ── Treatment Advice ───────────────────────────────────────────────
+          dietaryAdvice:   patient.dietaryAdvice   || "",
+          lifestyleAdvice: patient.lifestyleAdvice || "",
+          generalAdvice:   patient.generalAdvice   || "",
+          warningAdvice:   patient.warningAdvice   || "",
+           prescriptions: patient.prescriptions?.length
+            ? patient.prescriptions
+            : [getEmptyPrescription()],
+            // ── Tests / Reports ────────────────────────────────────────────────
+          selectedTests: patient.selectedTests || [],
+          reports:       patient.reports       || [],
+              canvasNotes: patient.canvasNotes || [],
+
+          // canvasNote (current session) starts null — only set when doctor
+          // draws a NEW note in this session via onSaveNote callback.
+          canvasNote: null,
         }
       }));
       
@@ -614,7 +651,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
     setCurrentPage(1); // Reset to first page when toggling
   };
   const handleMarkComplete = async (patient) => {
-    const data = patientData[patient.patientId] || {};
+    const data = patientData[patient.appointmentId] || {};
     setSavingAppointmentId(patient.appointmentId);
     console.log('Marking complete for:', patient.name);
     console.log('Data:', data);
@@ -622,6 +659,43 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
       (p) =>
         p.medicineName && p.dosage && p.frequency && p.duration && p.timing
     );
+    let prescriptionPdfBase64 = null;
+    try {
+      prescriptionPdfBase64 = await generatePrescriptionPdfBase64(
+        patient,
+        data,
+        {
+          name:          doctorsInfo?.name          || '',
+          qualification: doctorsInfo?.specialization || '',
+          regNo:         doctorsInfo?.regNo          || '',
+          clinicName:    doctorsInfo?.clinicName     || '',
+          address:       doctorsInfo?.address        || '',
+          phoneNumber:   doctorsInfo?.phoneNumber    || '',
+        }
+      );
+    } catch (pdfErr) {
+      console.warn('[handleMarkComplete] PDF generation skipped:', pdfErr);
+    }
+    const prescriptionBodyHtml = buildPrescriptionHtml(patient, data, doctorsInfo);
+    const prescriptionHtml = `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Prescription — ${patient?.name || 'Patient'}</title>
+    <style>${getPrescriptionPageCss()}</style>
+  </head>
+  <body>${prescriptionBodyHtml}</body>
+</html>`;
+ // ── Canvas / handwritten note ──
+    // Structured as a nested object matching CompleteAppointmentRequest.CanvasNoteDto
+    const canvasNote = data.canvasNote
+      ? {
+          imageDataUrl: data.canvasNote.imageDataUrl || null,
+          pdfDataUrl:   data.canvasNote.pdfDataUrl   || null,
+          createdAt:    data.canvasNote.createdAt     || null,
+        }
+      : null;
+
     const payload = {
       appointmentId: patient.appointmentId,
 
@@ -661,7 +735,22 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
   // Internal
   internalNotes: data.internalNotes || "",
 
-  sendPrescriptionToPatient: data.sendPrescriptionToPatient || false
+  sendPrescriptionToPatient: data.sendPrescriptionToPatient || false,
+
+  // Canvas handwritten note
+  canvasNoteImageUrl: data.canvasNote?.imageDataUrl || null,
+  canvasNotePdfUrl:   data.canvasNote?.pdfDataUrl   || null,
+  canvasNoteDate:     data.canvasNote?.createdAt    || null,
+   canvasNote,
+
+      // Full self-contained HTML of the prescription pad.
+      // Backend converts this to PDF and attaches it to the patient message.
+      prescriptionHtml,
+      // ── Frontend-generated PDF (base64, no prefix) ────────────────────────
+      // When present, backend sends THIS directly to WhatsApp instead of
+      // regenerating via PDFBox. Pixel-perfect match to the on-screen layout.
+      // null when generation failed — backend falls back to PDFBox.
+      prescriptionPdfBase64,
     };
     
     //alert(`Consultation completed for ${patient.name}!\n\nSymptoms: ${data.symptoms || 'N/A'}\nPrescriptions: ${(data.prescriptions || []).length} medicine(s)\nNext Visit: ${data.nextVisitDate || 'Not set'}`);
@@ -682,7 +771,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
     // }));
     setPatientData((prev) => {
       const updated = { ...prev };
-      delete updated[patient.patientId];
+      delete updated[patient.appointmentId];
       return updated;
     });
     if (onRefreshAppointments) {
@@ -821,11 +910,11 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
         <div className="patient-list">
           {paginatedPatients.map((patient, index) => {
             const isExpanded = expandedAppointment === patient.appointmentId;
-            const data = patientData[patient.patientId] || {};
+            const data = patientData[patient.appointmentId] || {};
             const prescriptions = data.prescriptions || [getEmptyPrescription()];
             const isConsultationLocked =
             patient.status === "COMPLETED" || patient.status === "CANCELLED";
-            const isLabTestsExpanded = labTestsExpanded[patient.patientId] || false;
+            const isLabTestsExpanded = labTestsExpanded[patient.appointmentId] || false;
              // Pagination logic for tests
             const totalPages = Math.ceil(availableTests.length / testsPerPage);
             const startIndex = (currentPage - 1) * testsPerPage;
@@ -928,23 +1017,53 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                     )}
                   </div>
                   
-                  <button 
-                    className="expand-toggle"
-                    onClick={(e) => handleToggleExpand(patient, e)}
-                  >
-                    <svg 
-                      viewBox="0 0 24 24" 
-                      fill="none"
-                      style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  {/* ── Only chevron in header ── */}
+                  <div className="patient-card-right-actions">
+                    <button 
+                      className="expand-toggle"
+                      onClick={(e) => handleToggleExpand(patient, e)}
                     >
-                      <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2"/>
-                    </svg>
-                  </button>
+                      <svg 
+                        viewBox="0 0 24 24" 
+                        fill="none"
+                        style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                      >
+                        <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 {isExpanded && (
                   <div className="patient-expanded-content">
-                    {/* 1. NEW: Chief Complaint */}
+
+                    {/* ── Action buttons row at top of expanded panel ── */}
+                    <div className="consultation-top-actions">
+                      <button
+                        className={`cta-btn cta-canvas ${data.canvasNote ? 'cta-saved' : ''}`}
+                        onClick={() => setShowCanvasNote(patient)}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" width="15" height="15">
+                          <path d="M12 20H21M16.5 3.5C17.33 2.67 18.67 2.67 19.5 3.5C20.33 4.33 20.33 5.67 19.5 6.5L7 19L3 20L4 16L16.5 3.5Z"
+                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        {data.canvasNote ? '✓ Prescription Note Saved' : 'Write Prescription'}
+                      </button>
+
+                      <button
+                        className="cta-btn cta-prescription"
+                        onClick={() => setShowPrescriptionPad(patient)}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" width="15" height="15">
+                          <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5" 
+                            stroke="currentColor" strokeWidth="2"/>
+                          <path d="M9 12H15M9 16H15" stroke="currentColor" strokeWidth="2"/>
+                        </svg>
+                        View Prescription
+                      </button>
+                    </div>
+
+                    {/* 1. Chief Complaint */}
                       <ChiefComplaintSection 
                         patient={patient}
                         data={data}
@@ -972,7 +1091,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                       placeholder="Enter patient symptoms..."
                       rows="2"
                       value={data.symptoms || ''}
-                      onChange={(e) => handleInputChange(patient.patientId, 'symptoms', e.target.value)}
+                      onChange={(e) => handleInputChange(patient.appointmentId, 'symptoms', e.target.value)}
                     />
 
                    
@@ -989,7 +1108,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                       placeholder="Diagnosis..."
                       rows="2"
                       value={data.diagnosis || ''}
-                      onChange={(e) => handleInputChange(patient.patientId, 'diagnosis', e.target.value)}
+                      onChange={(e) => handleInputChange(patient.appointmentId, 'diagnosis', e.target.value)}
                     />
                      {/* 5. NEW: Examination Findings */}
                       <ExaminationFindingsSection 
@@ -1014,7 +1133,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                         </h4>
                         <button 
                           className="collapse-toggle-btn"
-                          onClick={() => toggleLabTests(patient.patientId)}
+                          onClick={() => toggleLabTests(patient.appointmentId)}
                           disabled={isConsultationLocked}
                         >
                           <svg 
@@ -1036,7 +1155,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                                 <input
                                   type="checkbox"
                                   checked={(data.selectedTests || []).includes(test.name)}
-                                  onChange={() => handleTestToggle(patient.patientId, test.name)}
+                                  onChange={() => handleTestToggle(patient.appointmentId, test.name)}
                                   disabled={isConsultationLocked}
                                 />
                                 <span className="test-checkbox-text">
@@ -1103,7 +1222,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                               onChange={(e) => {
                                 const file = e.target.files[0];
                                 if (file) {
-                                  handleReportUpload(patient.patientId, file);
+                                  handleReportUpload(patient.appointmentId, file);
                                   e.target.value = null;
                                 }
                               }}
@@ -1149,7 +1268,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                                   </a>
                                   {!isConsultationLocked && (
                                     <button
-                                      onClick={() => handleRemoveReport(patient.patientId, report.id)}
+                                      onClick={() => handleRemoveReport(patient.appointmentId, report.id)}
                                       className="report-action-btn delete-btn"
                                     >
                                       <svg viewBox="0 0 24 24" fill="none">
@@ -1175,7 +1294,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                         </h4>
                         <button
                           className="add-prescription-btn"
-                          onClick={() => addPrescription(patient.patientId)}
+                          onClick={() => addPrescription(patient.appointmentId)}
                         >
                           <svg viewBox="0 0 24 24" fill="none">
                             <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2"/>
@@ -1192,7 +1311,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                               {idx > 0 && (
                                 <button
                                   className="remove-prescription-btn"
-                                  onClick={() => removePrescription(patient.patientId, idx)}
+                                  onClick={() => removePrescription(patient.appointmentId, idx)}
                                 >
                                   <svg viewBox="0 0 24 24" fill="none">
                                     <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2"/>
@@ -1208,7 +1327,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                                   type="text"
                                   placeholder="e.g., Paracetamol"
                                   value={prescription.medicineName}
-                                  onChange={(e) => handlePrescriptionChange(patient.patientId, idx, 'medicineName', e.target.value)}
+                                  onChange={(e) => handlePrescriptionChange(patient.appointmentId, idx, 'medicineName', e.target.value)}
                                 />
                               </div>
 
@@ -1218,7 +1337,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                                   type="text"
                                   placeholder="e.g., 1 tab, 5ml"
                                   value={prescription.dosage}
-                                  onChange={(e) => handlePrescriptionChange(patient.patientId, idx, 'dosage', e.target.value)}
+                                  onChange={(e) => handlePrescriptionChange(patient.appointmentId, idx, 'dosage', e.target.value)}
                                 />
                               </div>
 
@@ -1226,7 +1345,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                                 <label>Frequency *</label>
                                 <select
                                   value={prescription.frequency}
-                                  onChange={(e) => handlePrescriptionChange(patient.patientId, idx, 'frequency', e.target.value)}
+                                  onChange={(e) => handlePrescriptionChange(patient.appointmentId, idx, 'frequency', e.target.value)}
                                 >
                                   <option value="once_daily">Once daily</option>
                                   <option value="twice_daily">Twice daily</option>
@@ -1243,7 +1362,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                                 <label>Duration *</label>
                                 <select
                                   value={prescription.duration}
-                                  onChange={(e) => handlePrescriptionChange(patient.patientId, idx, 'duration', e.target.value)}
+                                  onChange={(e) => handlePrescriptionChange(patient.appointmentId, idx, 'duration', e.target.value)}
                                 >
                                   <option value="">Select duration</option>
                                   <option value="1_day">1 day</option>
@@ -1262,7 +1381,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                                 <label>Timing *</label>
                                 <select
                                   value={prescription.timing}
-                                  onChange={(e) => handlePrescriptionChange(patient.patientId, idx, 'timing', e.target.value)}
+                                  onChange={(e) => handlePrescriptionChange(patient.appointmentId, idx, 'timing', e.target.value)}
                                 >
                                   <option value="before_food">Before food</option>
                                   <option value="after_food">After food</option>
@@ -1280,7 +1399,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                                   type="text"
                                   placeholder="Special instructions..."
                                   value={prescription.notes}
-                                  onChange={(e) => handlePrescriptionChange(patient.patientId, idx, 'notes', e.target.value)}
+                                  onChange={(e) => handlePrescriptionChange(patient.appointmentId, idx, 'notes', e.target.value)}
                                 />
                               </div>
                             </div>
@@ -1294,7 +1413,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                             <input
                               type="checkbox"
                               checked={data.sendPrescriptionToPatient || false}
-                              onChange={(e) => handleInputChange(patient.patientId, 'sendPrescriptionToPatient', e.target.checked)}
+                              onChange={(e) => handleInputChange(patient.appointmentId, 'sendPrescriptionToPatient', e.target.checked)}
                             />
                             <span className="checkbox-label">
                               <svg viewBox="0 0 24 24" fill="none" className="whatsapp-icon">
@@ -1328,7 +1447,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                           type="date"
                           className="reminder-input"
                           value={data.nextVisitDate || ''}
-                          onChange={(e) => handleInputChange(patient.patientId, 'nextVisitDate', e.target.value)}
+                          onChange={(e) => handleInputChange(patient.appointmentId, 'nextVisitDate', e.target.value)}
                           min={new Date().toISOString().split('T')[0]}
                         />
                         <textarea
@@ -1336,10 +1455,27 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                           placeholder="Notes for next visit..."
                           rows="2"
                           value={data.nextVisitNotes || ''}
-                          onChange={(e) => handleInputChange(patient.patientId, 'nextVisitNotes', e.target.value)}
+                          onChange={(e) => handleInputChange(patient.appointmentId, 'nextVisitNotes', e.target.value)}
                         />
                       </div>
                     </div>
+                    {/* Prescription Pad Modal */}
+                    {showPrescriptionPad && (
+                      <PrescriptionPad
+                        patient={showPrescriptionPad}
+                        data={patientData[showPrescriptionPad.appointmentId] || {}}
+                        isVisible={!!showPrescriptionPad}
+                        onClose={() => setShowPrescriptionPad(null)}
+                        doctorInfo={{
+                          name: doctors?.[0]?.name || "Dr. Name",
+                          qualification: doctors?.[0]?.qualification || "MBBS, MD",
+                          regNo: doctors?.[0]?.regNo || "XXXXXX",
+                          clinicName: doctors?.[0]?.clinicName || "Clinic Name",
+                          address: doctors?.[0]?.address || "Clinic Address",
+                          phoneNumber: doctors?.[0]?.phoneNumber || "+91 XXXXXXXXXX"
+                        }}
+                      />
+                    )}
 {/* 11. NEW: Internal Notes */}
                       <InternalNotesSection 
                         patient={patient}
@@ -1347,7 +1483,6 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                         handleInputChange={handleInputChange}
                         isLocked={isConsultationLocked}
                       />
-                    {/* Action Buttons */}
                     <div className="consultation-actions">
                       <button
                         className="action-btn cancel-btn"
@@ -1454,6 +1589,38 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
         )}
       
 
+      {/* Canvas Note Modal */}
+      {showCanvasNote && (
+        <CanvasNoteModal
+          isVisible={!!showCanvasNote}
+          patient={showCanvasNote}
+          doctorInfo={{
+            name:          doctorsInfo?.name          || 'Dr. Name',
+            qualification: doctorsInfo?.specialization || 'MBBS, MD',
+            regNo:         doctorsInfo?.regNo         || 'XXXXXX',
+            clinicName:    doctorsInfo?.clinicName    || 'Clinic Name',
+            address:       doctorsInfo?.address       || 'Clinic Address',
+            phoneNumber:   doctorsInfo?.phoneNumber   || '+91 XXXXXXXXXX',
+          }}
+          pastNotes={patientData[showCanvasNote.appointmentId]?.canvasNotes || []}
+          savedNote={patientData[showCanvasNote.appointmentId]?.canvasNote  || null}
+          onClose={() => setShowCanvasNote(null)}
+          onSaveNote={({ imageDataUrl, pdfDataUrl, appointmentId }) => {
+            setPatientData(prev => ({
+              ...prev,
+              [appointmentId]: {
+                ...prev[appointmentId],
+                canvasNote: {
+                  imageDataUrl,
+                  pdfDataUrl,
+                  createdAt: new Date().toISOString(),
+                },
+              }
+            }));
+          }}
+        />
+      )}
+
       {/* Walk-in Modal */}
       {showWalkInModal && (
         <AddWalkInModal
@@ -1463,6 +1630,23 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
           onSuccess={onRefreshAppointments}
         />
       )}
+        {/* Prescription Pad Modal */}
+  {showPrescriptionPad && (
+    <PrescriptionPad
+      patient={showPrescriptionPad}
+      data={patientData[showPrescriptionPad.appointmentId] || {}}
+      isVisible={!!showPrescriptionPad}
+      onClose={() => setShowPrescriptionPad(null)}
+      doctorInfo={{
+        name: doctorsInfo?.name || "Dr. Name",
+        qualification: doctorsInfo?.specialization || "MBBS, MD",
+        regNo: doctorsInfo?.regNo || "XXXXXX",
+        clinicName: doctorsInfo?.clinicName || "Clinic Name",
+        address: doctorsInfo?.address || "Clinic Address",
+        phoneNumber: doctorsInfo?.phoneNumber || "+91 XXXXXXXXXX"
+      }}
+    />
+  )}
     </div>
   );
 };

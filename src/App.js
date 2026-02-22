@@ -11,11 +11,19 @@ function App() {
 
     // Fallback to combined param if needed
     if ((!doctor || !clinic) && params.get("clinicDocId")) {
-      const parts = params.get("clinicDocId").split("_");
-      if (parts.length === 2) {
-        doctor = parts[0];
-        clinic = parts[1];
+      try {
+        // Decode Base64
+        const decoded = atob(params.get("clinicDocId"));
+        const parts = decoded.split("_");
+
+        if (parts.length === 2) {
+          doctor = parts[0];
+          clinic = parts[1];
+        }
+      } catch (err) {
+        console.error("Invalid Base64 clinicDocId");
       }
+    
     }
 
     // Convert to numbers
