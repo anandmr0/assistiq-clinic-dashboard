@@ -1,0 +1,618 @@
+/* ================================================
+   Prescription Pad Modal
+   ================================================ */
+
+.prescription-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease-out;
+  padding: 1rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.prescription-modal-content {
+  background: var(--gray-100);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  max-width: 900px;
+  width: 100%;
+  max-height: 95vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modal Header */
+.prescription-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--gray-300);
+  background: white;
+  border-radius: 20px 20px 0 0;
+}
+
+.prescription-modal-header h2 {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.prescription-modal-header h2 svg {
+  color: var(--primary-blue);
+}
+
+.prescription-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prescription-close-btn:hover {
+  background: var(--error-red);
+  transform: rotate(90deg);
+}
+
+.prescription-close-btn:hover svg {
+  color: white;
+}
+
+/* Action Buttons */
+.prescription-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid var(--gray-300);
+}
+
+.mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--white);
+  border: 2px solid var(--gray-300);
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover {
+  border-color: var(--primary-blue);
+  background: rgba(0, 102, 204, 0.05);
+}
+
+.mode-btn.active {
+  background: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: white;
+}
+
+.print-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #06D6A0, #048B69);
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(6, 214, 160, 0.3);
+}
+
+.print-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(6, 214, 160, 0.4);
+}
+
+/* ================================================
+   Prescription Pad Container
+   ================================================ */
+
+.prescription-pad-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  background: var(--gray-100);
+}
+
+.prescription-pad-wrapper.preview-mode {
+  background: #525252;
+  padding: 2rem;
+}
+
+.prescription-pad {
+  background: white;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  position: relative;
+  /* Paper texture effect */
+  background-image: 
+    linear-gradient(90deg, rgba(200, 200, 200, 0.05) 1px, transparent 1px),
+    linear-gradient(rgba(200, 200, 200, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.prescription-pad-wrapper.preview-mode .prescription-pad {
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.24);
+}
+
+/* ================================================
+   Header Section
+   ================================================ */
+
+.prescription-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.doctor-details {
+  flex: 1;
+}
+
+.doctor-name {
+  font-family: 'Brush Script MT', 'Lucida Handwriting', cursive;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--primary-blue);
+  margin: 0 0 0.25rem 0;
+  letter-spacing: 0.5px;
+}
+
+.doctor-qualification {
+  font-family: Georgia, serif;
+  font-size: 0.9375rem;
+  color: var(--gray-600);
+  margin: 0 0 0.25rem 0;
+  font-style: italic;
+}
+
+.doctor-reg {
+  font-family: Georgia, serif;
+  font-size: 0.8125rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.clinic-details {
+  text-align: right;
+  flex: 1;
+}
+
+.clinic-name {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin: 0 0 0.375rem 0;
+}
+
+.clinic-address,
+.clinic-phone {
+  font-size: 0.8125rem;
+  color: var(--gray-600);
+  margin: 0 0 0.25rem 0;
+  line-height: 1.4;
+}
+
+.prescription-divider {
+  height: 2px;
+  background: linear-gradient(to right, var(--primary-blue), transparent);
+  margin-bottom: 1.5rem;
+}
+
+/* ================================================
+   Patient Info Bar
+   ================================================ */
+
+.patient-info-bar {
+  display: flex;
+  gap: 2rem;
+  padding: 0.875rem 1.25rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-left: 4px solid var(--primary-blue);
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+}
+
+.info-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--gray-700);
+  font-size: 0.875rem;
+}
+
+.info-value {
+  font-weight: 500;
+  color: var(--gray-900);
+  font-size: 0.875rem;
+}
+
+/* ================================================
+   Rx Symbol
+   ================================================ */
+
+.rx-symbol {
+  font-family: 'Times New Roman', serif;
+  font-size: 3rem;
+  font-weight: bold;
+  color: var(--primary-blue);
+  opacity: 0.8;
+  margin: 1rem 0;
+  font-style: italic;
+}
+
+/* ================================================
+   Prescription Sections
+   ================================================ */
+
+.prescription-section {
+  margin-bottom: 1.5rem;
+  page-break-inside: avoid;
+}
+
+.section-title {
+  font-family: Georgia, serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin: 0 0 0.625rem 0;
+  text-decoration: underline;
+  text-decoration-color: var(--primary-blue);
+  text-underline-offset: 4px;
+}
+
+.handwritten-text {
+  font-family: 'Brush Script MT', 'Comic Sans MS', cursive;
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: #1a1a2e;
+  margin: 0.375rem 0;
+  letter-spacing: 0.3px;
+}
+
+/* ================================================
+   Vitals Compact
+   ================================================ */
+
+.vitals-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  padding: 0.75rem 1rem;
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  margin-bottom: 1.25rem;
+}
+
+.vitals-compact span {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  font-family: 'Courier New', monospace;
+}
+
+/* ================================================
+   Medications List
+   ================================================ */
+
+.medications {
+  background: #f0fdf4;
+  padding: 1rem;
+  border-radius: 6px;
+  border-left: 4px solid #10b981;
+}
+
+.medication-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.medication-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #d1fae5;
+}
+
+.med-number {
+  font-weight: 700;
+  color: var(--primary-blue);
+  font-size: 1.125rem;
+  flex-shrink: 0;
+  font-family: Georgia, serif;
+}
+
+.med-details {
+  flex: 1;
+}
+
+.med-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.375rem;
+}
+
+.med-instructions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.875rem;
+  margin-top: 0.375rem;
+}
+
+.med-dosage,
+.med-frequency,
+.med-duration,
+.med-timing {
+  font-size: 0.8125rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+}
+
+.med-dosage {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.med-frequency {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.med-duration {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.med-timing {
+  background: #fce7f3;
+  color: #9f1239;
+}
+
+.med-notes {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--gray-600);
+  font-style: italic;
+  padding-left: 1rem;
+  border-left: 2px solid var(--gray-300);
+}
+
+/* ================================================
+   Advice & Tests Lists
+   ================================================ */
+
+.advice-list,
+.tests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.advice-list p,
+.tests-list p {
+  padding-left: 0.5rem;
+}
+
+/* ================================================
+   Follow-up Section
+   ================================================ */
+
+.followup {
+  background: #fff7ed;
+  padding: 0.875rem 1rem;
+  border-left: 4px solid #f59e0b;
+  border-radius: 4px;
+}
+
+/* ================================================
+   Footer & Signature
+   ================================================ */
+
+.prescription-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--gray-200);
+}
+
+.signature-section {
+  text-align: right;
+  max-width: 250px;
+  margin-left: auto;
+}
+
+.signature-line {
+  height: 60px;
+  border-bottom: 1px solid var(--gray-400);
+  margin-bottom: 0.5rem;
+}
+
+.signature-label {
+  font-size: 0.8125rem;
+  color: var(--gray-600);
+  margin: 0;
+  font-family: var(--font-body);
+}
+
+/* ================================================
+   Watermark
+   ================================================ */
+
+.prescription-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 5rem;
+  font-weight: 900;
+  color: rgba(0, 102, 204, 0.03);
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--font-display);
+  white-space: nowrap;
+}
+
+/* ================================================
+   Print Styles
+   Print is handled in a dedicated new window — no
+   @media print rules needed on the main page.
+   ================================================ */
+
+/* ================================================
+   Responsive Design
+   ================================================ */
+
+@media (max-width: 768px) {
+  .prescription-modal-content {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .prescription-actions {
+    flex-direction: column;
+  }
+
+  .prescription-pad {
+    padding: 1.5rem 1rem;
+  }
+
+  .prescription-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .clinic-details {
+    text-align: left;
+  }
+
+  .patient-info-bar {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .doctor-name {
+    font-size: 1.5rem;
+  }
+
+  .rx-symbol {
+    font-size: 2.5rem;
+  }
+
+  .prescription-watermark {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .prescription-pad-wrapper {
+    padding: 0.5rem;
+  }
+
+  .prescription-pad {
+    padding: 1rem 0.75rem;
+  }
+
+  .handwritten-text {
+    font-size: 1rem;
+  }
+
+  .medication-item {
+    flex-direction: column;
+  }
+}
+
+/* ── Canvas / Handwritten Note section ── */
+.canvas-note-section {
+  border-top: 1.5px dashed #CBD5E1;
+  padding-top: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.canvas-note-img-wrap {
+  border: 1.5px solid #E2E8F0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #FFFEF7;
+  margin-top: 0.5rem;
+}
+
+.canvas-note-img {
+  width: 100%;
+  display: block;
+  max-height: 420px;
+  object-fit: contain;
+  background: #FFFEF7;
+}

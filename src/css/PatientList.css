@@ -3983,3 +3983,221 @@
     transform: translateY(0);
   }
 }
+
+/* View Prescription Button */
+.view-prescription-btn {
+  background: linear-gradient(135deg, #06D6A0 0%, #048B69 100%);
+  color: white;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  border-radius: var(--radius-lg);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: 0 4px 12px rgba(6, 214, 160, 0.3);
+}
+
+.view-prescription-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(6, 214, 160, 0.4);
+}
+
+.view-prescription-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.view-prescription-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.view-prescription-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* Update the .consultation-actions to have space for 2 buttons */
+.consultation-actions {
+  display: flex;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--gray-200);
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* Make buttons flex to fill space */
+.consultation-actions .action-btn {
+  flex: 1;
+  min-width: 180px;
+}
+
+@media (max-width: 640px) {
+  .consultation-actions {
+    flex-direction: column;
+  }
+  
+  .consultation-actions .action-btn {
+    width: 100%;
+  }
+}
+
+/* ================================================
+   Canvas Note Row — inside expanded patient panel
+   ================================================ */
+
+.canvas-note-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem 0.25rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--gray-100, #f1f5f9);
+  margin-bottom: 0.25rem;
+}
+
+.canvas-note-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.575rem 1.1rem;
+  background: linear-gradient(135deg, #7B2D8B 0%, #5A1E67 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(123, 45, 139, 0.22);
+  transition: all 0.18s;
+  font-family: var(--font-body, system-ui);
+  min-height: 38px;
+  letter-spacing: 0.1px;
+}
+.canvas-note-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(123, 45, 139, 0.32);
+}
+.canvas-note-btn--saved {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 3px 10px rgba(5, 150, 105, 0.22);
+}
+.canvas-note-btn--saved:hover {
+  box-shadow: 0 5px 14px rgba(5, 150, 105, 0.32);
+}
+
+/* Thumbnail preview chip */
+.canvas-note-preview-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 3px 10px 3px 3px;
+  background: #fff;
+  border: 1.5px solid var(--gray-200, #e2e8f0);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  font-family: var(--font-body, system-ui);
+}
+.canvas-note-preview-chip:hover {
+  border-color: #7B2D8B;
+}
+.canvas-note-preview-chip img {
+  width: 50px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 5px;
+  background: #FFFEF7;
+  display: block;
+}
+.canvas-note-preview-chip span {
+  font-size: 0.71rem;
+  color: var(--gray-500, #64748b);
+  font-weight: 500;
+}
+
+/* ================================================
+   Patient card right-side action group
+   (Canvas Note button + expand chevron together)
+   ================================================ */
+
+.patient-card-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Override canvas-note-btn sizing for compact header placement */
+.patient-card-right-actions .canvas-note-btn {
+  padding: 0.45rem 0.875rem;
+  font-size: 0.8rem;
+  min-height: 34px;
+  border-radius: 8px;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+/* ================================================
+   Consultation top-actions bar
+   (Canvas Note + View Prescription inside expanded panel)
+   ================================================ */
+
+.consultation-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.875rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #F1F5F9;
+  flex-wrap: wrap;
+}
+
+/* shared base */
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.525rem 1rem;
+  border: none;
+  border-radius: 9px;
+  font-size: 0.845rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.17s;
+  font-family: var(--font-body, system-ui);
+  min-height: 36px;
+  white-space: nowrap;
+}
+
+/* Canvas Note — purple */
+.cta-canvas {
+  background: linear-gradient(135deg, #7B2D8B 0%, #5A1E67 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(123, 45, 139, 0.22);
+}
+.cta-canvas:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(123, 45, 139, 0.32);
+}
+.cta-canvas.cta-saved {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.22);
+}
+.cta-canvas.cta-saved:hover {
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.32);
+}
+
+/* View Prescription — blue */
+.cta-prescription {
+  background: linear-gradient(135deg, #0066CC 0%, #004C99 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.22);
+}
+.cta-prescription:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.32);
+}

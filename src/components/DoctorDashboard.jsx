@@ -87,7 +87,9 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
                updatePatientStatus={updatePatientStatus}
                doctorId={doctorId}
                clinicId={clinicId}
+               doctorsInfo={dashboardData?.doctor}
             />
+
           </>
         )}
       </main>
