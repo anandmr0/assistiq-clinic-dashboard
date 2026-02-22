@@ -1101,3 +1101,106 @@ body {
     page-break-inside: avoid;
   }
 }
+/* ================================================
+   HEADER ADDITIONS — greeting, date badge, live badge,
+   progress bar  (appended — do not remove existing rules)
+   ================================================ */
+
+/* Greeting line above the doctor's name */
+.doctor-greeting {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  margin: 0 0 3px;
+}
+
+/* Right-side cluster: date badge + live badge */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
+}
+
+/* Date + time pill */
+.header-date-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--radius-lg);
+  padding: 6px 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
+}
+
+/* LIVE badge */
+.header-live-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(52, 211, 153, 0.38);
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #6ee7b7;
+}
+
+/* Pulsing green dot inside LIVE badge */
+.live-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34d399;
+  animation: livePulse 1.6s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
+/* Progress bar at the very bottom of the header */
+.header-progress-track {
+  background: rgba(0, 0, 0, 0.2);
+  height: 3px;
+  width: 100%;
+}
+
+.header-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #34d399, #6ee7b7);
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+  transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.header-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+  border-radius: inherit;
+}
+
+/* Hide date badge + live badge on very small screens */
+@media (max-width: 480px) {
+  .header-date-badge { display: none; }
+  .header-right      { gap: 0.5rem; }
+}
+
+/* Show clinic name on tablet+ (it was hidden on mobile by original CSS) */
+@media (min-width: 768px) {
+  .doctor-text .clinic-name { display: block; }
+}
