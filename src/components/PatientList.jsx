@@ -462,6 +462,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
           // canvasNote (current session) starts null — only set when doctor
           // draws a NEW note in this session via onSaveNote callback.
           canvasNote: null,
+          notes:patient.notes,
         }
       }));
       
@@ -1134,7 +1135,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                         <button 
                           className="collapse-toggle-btn"
                           onClick={() => toggleLabTests(patient.appointmentId)}
-                          disabled={isConsultationLocked}
+                         
                         >
                           <svg 
                             viewBox="0 0 24 24" 

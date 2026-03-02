@@ -5,12 +5,14 @@ const API_BASE_URL =
 
 export const fetchDashboardData = async (doctorId, clinicId) => {
   try {
+     const doctorDetails=await apiFetch(`/doctors/${doctorId}`);
+     console.log(doctorDetails);
     const appointments = await apiFetch(
       `/dashboard/appointment?doctorId=${doctorId}&clinicId=${clinicId}`
     );
    // console.log(response);
     
-
+   
      //const appointments = await response.json();
      const normalizeStatus = (s) => (s || "").toUpperCase();
      console.log("appointments"+appointments)
@@ -20,7 +22,7 @@ export const fetchDashboardData = async (doctorId, clinicId) => {
         return new Date(dateStr).toISOString().split("T")[0] === todayStr;
       };
      // Doctor Info
-     const doctorInfo = appointments?.length ? appointments[0].doctor : null;
+     const doctorInfo = doctorDetails ?? null;
  
      // Map ALL appointments to UI-safe structure
      const mappedAppointments = (appointments || []).map(a => ({
@@ -37,6 +39,7 @@ export const fetchDashboardData = async (doctorId, clinicId) => {
        diagnosis: a.diagnosis || "",
        chiefComplaint: a.chiefComplaint || "",
        examinationFindings: a.examinationFindings || "",
+         notes:a.notes,
        /* ---- Vital Signs ---- */
         systolic: a.systolicBp ?? null,
         diastolic: a.diastolicBp ?? null,
@@ -47,13 +50,14 @@ export const fetchDashboardData = async (doctorId, clinicId) => {
         spo2: a.spo2 ?? null,
        /* ---- Treatment Advice ---- */
       dietaryAdvice: a.dietaryInstructions || "",
-      lifestyleAdvice: a.lifestyleModifications || "",
+      lifestyleAdvice: a.lifestyleInstructions || "",
       generalAdvice: a.generalInstructions || "",
-      warningSigns: a.warningSigns || "",
+      warningAdvice: a.warningSigns || "",
        nextVisitDate: a.nextVisitDate || "",
        nextVisitNotes: a.nextVisitNotes || "",
        prescriptions: a.prescriptions || [],
        prescriptionSent: a.prescriptionSent || false,
+       internalNotes:a.internalNotes || "",
         // Prescriptions - map from backend
       prescriptions: (a.prescriptions || []).map(p => ({
         id: p.id,
