@@ -1,0 +1,679 @@
+/* ================================================
+   ReceptionistDashboard.css
+   ================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+.recep-root {
+  min-height: 100vh;
+  background: #f0f4f8;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── LOADING ── */
+.recep-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #64748b;
+}
+
+.recep-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #0f766e;
+  border-radius: 50%;
+  animation: recepSpin 0.8s linear infinite;
+}
+
+@keyframes recepSpin { to { transform: rotate(360deg); } }
+
+/* ── HEADER ── */
+.recep-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 60%, #0891b2 100%);
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.recep-header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 18px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.recep-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Role pill */
+.recep-role-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgba(255,255,255,0.9);
+  flex-shrink: 0;
+}
+
+.recep-greeting {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0 0 2px;
+}
+
+.recep-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.3px;
+  margin: 0 0 2px;
+  line-height: 1.2;
+}
+
+.recep-clinic {
+  font-size: 0.8125rem;
+  color: rgba(255,255,255,0.65);
+  margin: 0;
+}
+
+.recep-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.recep-date-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  padding: 6px 13px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.9);
+  white-space: nowrap;
+}
+
+.recep-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239,68,68,0.18);
+  border: 1px solid rgba(239,68,68,0.35);
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fca5a5;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.recep-logout-btn:hover {
+  background: rgba(239,68,68,0.3);
+  color: #fff;
+}
+
+/* Stats strip */
+.recep-stats-strip {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 12px 28px 14px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.recep-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 24px;
+}
+
+.recep-stat:first-child { padding-left: 0; }
+
+.recep-stat-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255,255,255,0.18);
+  flex-shrink: 0;
+}
+
+.recep-stat-num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.recep-stat-num--waiting   { color: #fbbf24; }
+.recep-stat-num--arrived   { color: #6ee7b7; }
+.recep-stat-num--done      { color: #a7f3d0; }
+.recep-stat-num--noshow    { color: #fca5a5; }
+
+.recep-stat-lbl {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+/* ── MAIN ── */
+.recep-main {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 28px;
+  flex: 1;
+}
+
+/* Toolbar */
+.recep-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.recep-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.recep-section-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+  position: relative;
+  padding-left: 14px;
+}
+
+.recep-section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(180deg, #1d4ed8, #0891b2);
+  border-radius: 9999px;
+}
+
+.recep-count-badge {
+  background: linear-gradient(135deg, #1d4ed8, #0891b2);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(29,78,216,0.28);
+}
+
+.recep-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.recep-walkin-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #1d4ed8, #0891b2);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 18px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 3px 12px rgba(29,78,216,0.28);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.recep-walkin-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(29,78,216,0.36);
+}
+
+.recep-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  color: #475569;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.recep-refresh-btn:hover {
+  border-color: #1d4ed8;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+/* Controls */
+.recep-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.recep-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+
+.recep-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.recep-search {
+  width: 100%;
+  padding: 10px 12px 10px 38px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #0f172a;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.recep-search:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(29,78,216,0.1);
+}
+
+.recep-filter-tabs {
+  display: flex;
+  gap: 2px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.recep-filter-tab {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: #64748b;
+  background: transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.recep-filter-tab--active {
+  background: #fff;
+  color: #1d4ed8;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* ── Queue cards ── */
+.recep-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recep-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  transition: box-shadow 0.15s, border-color 0.15s;
+  animation: recepFadeUp 0.3s ease both;
+}
+
+@keyframes recepFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.recep-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  border-color: #e2e8f0;
+}
+
+/* Token number */
+.recep-token {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
+  text-align: center;
+}
+
+.recep-token-num {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.recep-token-lbl {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+/* Avatar */
+.recep-avatar {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+/* Body */
+.recep-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.recep-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+
+.recep-patient-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.recep-status-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.recep-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.recep-doctor-pill {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Actions */
+.recep-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.recep-action-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: transform 0.12s, box-shadow 0.12s;
+  white-space: nowrap;
+}
+
+.recep-action-btn--primary {
+  background: linear-gradient(135deg, #0f766e, #0891b2);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(15,118,110,0.25);
+}
+
+.recep-action-btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15,118,110,0.35);
+}
+
+.recep-action-btn--danger {
+  background: #fff;
+  color: #dc2626;
+  border: 1.5px solid #fecaca;
+}
+
+.recep-action-btn--danger:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.recep-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.recep-btn-spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: recepSpin 0.7s linear infinite;
+  display: inline-block;
+}
+
+/* Empty state */
+.recep-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+  gap: 8px;
+}
+
+.recep-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 8px;
+}
+
+.recep-empty p {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #374151;
+  margin: 0;
+}
+
+.recep-empty small {
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+/* ── Logout modal ── */
+.recep-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: recepFadeIn 0.2s ease;
+}
+
+@keyframes recepFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.recep-modal {
+  background: #fff;
+  border-radius: 18px;
+  padding: 32px;
+  max-width: 360px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: recepSlideUp 0.25s cubic-bezier(0.16,1,0.3,1);
+}
+
+@keyframes recepSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.recep-modal h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 10px;
+}
+
+.recep-modal p {
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+.recep-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.recep-modal-cancel {
+  padding: 9px 20px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9px;
+  background: #fff;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.recep-modal-cancel:hover { background: #f8fafc; }
+
+.recep-modal-confirm {
+  padding: 9px 20px;
+  border: none;
+  border-radius: 9px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.recep-modal-confirm:hover { background: #dc2626; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .recep-header-inner { padding: 14px 16px; flex-wrap: wrap; }
+  .recep-date-badge   { display: none; }
+  .recep-stats-strip  { padding: 10px 16px; gap: 0; overflow-x: auto; }
+  .recep-stat         { padding: 0 16px; min-width: 64px; }
+  .recep-main         { padding: 16px; }
+  .recep-toolbar      { gap: 8px; }
+  .recep-card         { gap: 10px; padding: 14px 16px; flex-wrap: wrap; }
+  .recep-actions      { width: 100%; justify-content: flex-end; }
+  .recep-controls     { flex-direction: column; align-items: stretch; }
+  .recep-filter-tabs  { align-self: flex-start; }
+}
+
+@media (max-width: 480px) {
+  .recep-name  { font-size: 1rem; }
+  .recep-token { width: 44px; min-width: 44px; height: 44px; }
+  .recep-card  { padding: 12px; }
+}

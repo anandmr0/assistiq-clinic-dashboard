@@ -2,14 +2,18 @@ import React, { useState, useEffect } from 'react';
 import '../css/DoctorDashboard.css';
 import DashboardStats from './DashboardStats';
 import PatientList from './PatientList';
+import ChangePasswordModal from './ChangePasswordModal'; // ← import
 import { fetchDashboardData } from '../services/dashboardApi.js';
+import { useAuth } from '../context/AuthContext';
 
 const DoctorDashboard = ({ doctorId, clinicId }) => {
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading]             = useState(true);
-  const [currentTime, setCurrentTime]     = useState(new Date());
+  const { logout }                                    = useAuth();
+  const [dashboardData, setDashboardData]             = useState(null);
+  const [loading, setLoading]                         = useState(true);
+  const [currentTime, setCurrentTime]                 = useState(new Date());
+  const [showLogout, setShowLogout]                   = useState(false);
+  const [showChangePassword, setShowChangePassword]   = useState(false); // ← new
 
-  // Live clock — ticks every minute
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
@@ -45,21 +49,19 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
     console.log('Selected patient:', patient);
   };
 
-  // ── Header derived values ───────────────────────────────────────────────────
   const todayTotal    = dashboardData?.todayPatients?.length         || 0;
   const completed     = dashboardData?.completedAppointments?.length || 0;
   const completionPct = todayTotal > 0 ? Math.round((completed / todayTotal) * 100) : 0;
 
-  const hour      = currentTime.getHours();
-  const greeting  = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const dateStr   = currentTime.toLocaleDateString('en-IN', {
+  const hour     = currentTime.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const dateStr  = currentTime.toLocaleDateString('en-IN', {
     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
   });
-  const timeStr   = currentTime.toLocaleTimeString('en-IN', {
+  const timeStr  = currentTime.toLocaleTimeString('en-IN', {
     hour: '2-digit', minute: '2-digit',
   });
 
-  // ── Loading ─────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="dashboard-loading">
@@ -92,7 +94,7 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
             </div>
           </div>
 
-          {/* Right: date/time + live badge */}
+          {/* Right: date/time + live badge + actions */}
           <div className="header-right">
             <div className="header-date-badge">
               <svg viewBox="0 0 24 24" fill="none" width="14" height="14" style={{ flexShrink: 0 }}>
@@ -105,11 +107,33 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
               <span className="live-pulse-dot" />
               LIVE
             </div>
+
+            {/* Change Password — sits before Sign Out */}
+            <button
+              className="header-logout-btn"
+              onClick={() => setShowChangePassword(true)}
+              title="Change password"
+              style={{ opacity: 0.85 }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" width="15" height="15">
+                <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2"/>
+                <path d="M7 11V7C7 4.24 9.24 2 12 2C14.76 2 17 4.24 17 7V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <circle cx="12" cy="16" r="1.5" fill="currentColor"/>
+              </svg>
+              Password
+            </button>
+
+            <button className="header-logout-btn" onClick={() => setShowLogout(true)} title="Sign out">
+              <svg viewBox="0 0 24 24" fill="none" width="15" height="15">
+                <path d="M9 21H5C4.47 21 3.96 20.79 3.59 20.41C3.21 20.04 3 19.53 3 19V5C3 4.47 3.21 3.96 3.59 3.59C3.96 3.21 4.47 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M16 17L21 12L16 7M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Sign Out
+            </button>
           </div>
 
         </div>
 
-        {/* Progress bar — visible once at least one appointment exists today */}
         {todayTotal > 0 && (
           <div className="header-progress-track">
             <div
@@ -127,9 +151,9 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
           <>
             <DashboardStats data={dashboardData} />
             <PatientList
-              patients={dashboardData?.allAppointments             || []}
-              todayPatients={dashboardData?.todayPatients          || []}
-              activePatients={dashboardData?.activeAppointments    || []}
+              patients={dashboardData?.allAppointments              || []}
+              todayPatients={dashboardData?.todayPatients           || []}
+              activePatients={dashboardData?.activeAppointments     || []}
               completedPatients={dashboardData?.completedAppointments || []}
               onPatientSelect={handlePatientSelect}
               onRefreshAppointments={() => loadDashboard(doctorId, clinicId)}
@@ -141,6 +165,25 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
           </>
         )}
       </main>
+
+      {/* ── Logout modal ── */}
+      {showLogout && (
+        <div className="logout-overlay" onClick={() => setShowLogout(false)}>
+          <div className="logout-modal" onClick={e => e.stopPropagation()}>
+            <h3>Sign out?</h3>
+            <p>You will be returned to the login page.</p>
+            <div className="logout-modal-actions">
+              <button className="logout-cancel" onClick={() => setShowLogout(false)}>Cancel</button>
+              <button className="logout-confirm" onClick={logout}>Sign Out</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Change Password modal ── */}
+      {showChangePassword && (
+        <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+      )}
 
     </div>
   );
