@@ -5,6 +5,9 @@ import PrescriptionPad, { buildPrescriptionHtml, getPrescriptionPageCss } from '
 import CanvasNoteModal from './CanvasNoteModal';
 import { apiFetch } from "../services/apiConfig";
 import { generatePrescriptionPdfBase64 } from './PrescriptionPdfGenerator';
+import MedicineAutocomplete from './MedicineAutocomplete';
+import QuickTemplates       from './QuickTemplates';
+
 const ChiefComplaintSection = ({ patient, data, handleInputChange, isLocked }) => (
   <div className="consultation-section">
     <h4 className="section-heading">
@@ -429,7 +432,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
           selectedTests: patient.selectedTests || [],
           // Auto-populate reports from DB
           reports: patient.reports || [],
-          sendPrescriptionToPatient: patient.prescriptionSent || false,
+       sendPrescriptionToPatient: patient.prescriptionSent ?? true,
           // ── Clinical ──────────────────────────────────────────────────────
           chiefComplaint:      patient.chiefComplaint      || "",
           symptoms:            patient.symptoms            || "",
@@ -1063,6 +1066,21 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                         View Prescription
                       </button>
                     </div>
+                        {/* AFTER — add QuickTemplates above */}
+                        <QuickTemplates
+                         currentData={patientData[patient.appointmentId] || {}}  
+                        doctorId={doctorId}
+                          onApply={(templateData) => {
+                            setPatientData(prev => ({
+                              ...prev,
+                              [patient.appointmentId]: {
+                                ...prev[patient.appointmentId],
+                                ...templateData,
+                              }
+                            }));
+                          }}
+                          isLocked={isConsultationLocked}
+                        />
 
                     {/* 1. Chief Complaint */}
                       <ChiefComplaintSection 
@@ -1324,12 +1342,19 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                             <div className="prescription-grid">
                               <div className="form-field full-width">
                                 <label>Medicine Name *</label>
-                                <input
-                                  type="text"
-                                  placeholder="e.g., Paracetamol"
-                                  value={prescription.medicineName}
-                                  onChange={(e) => handlePrescriptionChange(patient.appointmentId, idx, 'medicineName', e.target.value)}
-                                />
+                                <MedicineAutocomplete
+                                  value={prescription.medicineName || ''}
+                                  disabled={isConsultationLocked}
+                                  onChange={(name, defaults) => {
+                                    handlePrescriptionChange(patient.appointmentId, idx , 'medicineName', name);
+                                    if (defaults) {
+                                      handlePrescriptionChange(patient.appointmentId, idx , 'dosage',    defaults.dosage);
+                                      handlePrescriptionChange(patient.appointmentId, idx , 'frequency', defaults.frequency);
+                                      handlePrescriptionChange(patient.appointmentId, idx , 'duration',  defaults.duration);
+                                      handlePrescriptionChange(patient.appointmentId, idx , 'timing',    defaults.timing);
+                                    }
+                                  }}
+                              />
                               </div>
 
                               <div className="form-field">
