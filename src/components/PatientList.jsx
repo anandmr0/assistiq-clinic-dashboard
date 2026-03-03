@@ -7,6 +7,7 @@ import { apiFetch } from "../services/apiConfig";
 import { generatePrescriptionPdfBase64 } from './PrescriptionPdfGenerator';
 import MedicineAutocomplete from './MedicineAutocomplete';
 import QuickTemplates       from './QuickTemplates';
+import { LANGUAGES, translateField } from './prescriptionTranslations';
 
 const ChiefComplaintSection = ({ patient, data, handleInputChange, isLocked }) => (
   <div className="consultation-section">
@@ -285,9 +286,15 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
   const testsPerPage = 6;
     const [showPrescriptionPad, setShowPrescriptionPad] = useState(null);
   const [showCanvasNote,      setShowCanvasNote]       = useState(null);
+  const [toast, setToast] = useState(null);
  // Pagination state for patient list
   const [patientCurrentPage, setPatientCurrentPage] = useState(1);
   const patientsPerPage = 10;
+  const showToast = (type, title, message, duration = 4500) => {
+    setToast({ type, title, message });
+    setTimeout(() => setToast(null), duration);
+  };
+
   useEffect(() => {
     setExpandedAppointment(null);
     setPatientCurrentPage(1);
@@ -394,7 +401,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
       setWalkInInitData(data);
     } catch (err) {
       console.log(err);
-      alert("Failed to load doctors");
+      showToast('error', 'Load Failed', 'Failed to load doctors. Please refresh.');
       setShowWalkInModal(false);
     } finally {
       setLoadingWalkIn(false);
@@ -406,7 +413,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
       await onRefreshAppointments();
     } catch (error) {
       console.error('Error refreshing:', error);
-      alert('Failed to refresh appointments');
+      showToast('error', 'Refresh Failed', 'Failed to refresh. Please try again.');
     } finally {
       setIsRefreshing(false);
     }
@@ -432,7 +439,8 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
           selectedTests: patient.selectedTests || [],
           // Auto-populate reports from DB
           reports: patient.reports || [],
-       sendPrescriptionToPatient: patient.prescriptionSent ?? true,
+       sendPrescriptionToPatient: patient.prescriptionSent !== false,
+       prescriptionLanguage: patient.prescriptionLanguage || 'en',
           // ── Clinical ──────────────────────────────────────────────────────
           chiefComplaint:      patient.chiefComplaint      || "",
           symptoms:            patient.symptoms            || "",
@@ -542,12 +550,12 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
 
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      alert('File size must be less than 5MB');
+      showToast('error', 'File Too Large', 'Please upload a file smaller than 5MB.');
       return;
     }
 
     if (file.type !== 'application/pdf') {
-      alert('Only PDF files are allowed');
+      showToast('error', 'Invalid File Type', 'Only PDF files are allowed.');
       return;
     }
 
@@ -583,10 +591,10 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
       };
       reader.readAsDataURL(file);
 
-      alert('Report uploaded successfully');
+      showToast('success', 'Report Uploaded', 'Patient report uploaded successfully.');
     } catch (error) {
       console.error('Error uploading report:', error);
-      alert('Failed to upload report');
+      showToast('error', 'Upload Failed', 'Failed to upload report. Try again.');
     }
   };
   const handleRemoveReport = async (patientId, reportId) => {
@@ -610,10 +618,10 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
         };
       });
 
-      alert('Report deleted successfully');
+      showToast('success', 'Report Deleted', 'Report removed successfully.');
     } catch (error) {
       console.error('Error deleting report:', error);
-      alert('Failed to delete report');
+      showToast('error', 'Delete Failed', 'Failed to delete report. Try again.');
     }
   };
   // Handle test selection
@@ -675,7 +683,8 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
           clinicName:    doctorsInfo?.clinicName     || '',
           address:       doctorsInfo?.address        || '',
           phoneNumber:   doctorsInfo?.phoneNumber    || '',
-        }
+        },
+        data.prescriptionLanguage || 'en'
       );
     } catch (pdfErr) {
       console.warn('[handleMarkComplete] PDF generation skipped:', pdfErr);
@@ -739,7 +748,8 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
   // Internal
   internalNotes: data.internalNotes || "",
 
-  sendPrescriptionToPatient: data.sendPrescriptionToPatient || false,
+  sendPrescriptionToPatient: (cleanPrescriptions.length > 0 || !!data.canvasNote?.imageDataUrl) && (data.sendPrescriptionToPatient ?? true),
+  prescriptionLanguage: data.prescriptionLanguage || 'en',
 
   // Canvas handwritten note
   canvasNoteImageUrl: data.canvasNote?.imageDataUrl || null,
@@ -767,23 +777,19 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
       });
      // if (!res.ok) throw new Error();
       console.log("Request Sent:", payload);
-      alert("Consultation saved & appointment completed");
+      showToast('success', 'Consultation Completed', `${patient.name}'s consultation saved and prescription dispatched.`, 5000);
       setExpandedAppointment(null);
-    //   setPatientData(prev => ({
-    //   ...prev,
-    //   [patient.patientId]: {}
-    // }));
-    setPatientData((prev) => {
-      const updated = { ...prev };
-      delete updated[patient.appointmentId];
-      return updated;
-    });
-    if (onRefreshAppointments) {
-      onRefreshAppointments();
-    }
+      setPatientData((prev) => {
+        const updated = { ...prev };
+        delete updated[patient.appointmentId];
+        return updated;
+      });
+      if (onRefreshAppointments) {
+        setTimeout(() => onRefreshAppointments(), 1800);
+      }
   } catch (err) {
     console.error(err);
-    alert("Failed to save consultation");
+    showToast('error', 'Save Failed', 'Failed to save consultation. Please check your connection.');
 
   }
   finally {
@@ -1432,13 +1438,45 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                           </div>
                         ))}
                       </div>
-                     {/* Send Prescription Checkbox */}
+                     {/* Send Prescription Checkbox + Language */}
                      {!isConsultationLocked && (() => {
                         const hasPrescription = (data.prescriptions || []).some(p => p.medicineName?.trim());
                         const hasCanvasNote   = !!data.canvasNote?.imageDataUrl;
                         const hasContent      = hasPrescription || hasCanvasNote;
+                        const currentLang     = data.prescriptionLanguage || 'en';
                         return (
                           <div className="send-prescription-section">
+                            {/* Language selector — only shown when there's content to send */}
+                            {hasContent && (
+                              <div className="prescription-language-row">
+                                <span className="prescription-language-label">
+                                  🌐 WhatsApp language:
+                                </span>
+                                <div className="prescription-language-pills">
+                                  {LANGUAGES.map(lang => (
+                                    <button
+                                      key={lang.code}
+                                      onClick={() => handleInputChange(patient.appointmentId, 'prescriptionLanguage', lang.code)}
+                                      className={`lang-pill ${currentLang === lang.code ? 'active' : ''}`}
+                                      title={lang.label}
+                                    >
+                                      {lang.flag} {lang.label}
+                                    </button>
+                                  ))}
+                                </div>
+                                {currentLang !== 'en' && (
+                                  <div className="lang-preview">
+                                    <span>Preview: </span>
+                                    <em>
+                                      {translateField('timing', 'after_food', currentLang)} &nbsp;·&nbsp;
+                                      {translateField('frequency', 'twice_daily', currentLang)} &nbsp;·&nbsp;
+                                      {translateField('duration', '7_days', currentLang)}
+                                    </em>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
                             <label
                               className="send-prescription-checkbox"
                               style={{ opacity: hasContent ? 1 : 0.45, cursor: hasContent ? 'pointer' : 'not-allowed' }}
@@ -1456,7 +1494,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                                 <strong>Send prescription to patient via WhatsApp</strong>
                                 <small>
                                   {hasContent
-                                    ? 'Patient will receive prescription details on registered number'
+                                    ? `Patient will receive prescription in ${LANGUAGES.find(l => l.code === currentLang)?.label || 'English'}`
                                     : 'Add medicines or a handwritten note to enable'}
                                 </small>
                               </span>
@@ -1686,9 +1724,39 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
       }}
     />
   )}
+
+      {toast && (
+        <div style={{
+          position:'fixed', top:24, left:'50%', transform:'translateX(-50%)',
+          zIndex:999999, display:'flex', alignItems:'flex-start', gap:12,
+          background:'#fff',
+          borderLeft:('4px solid ' + (toast.type==='success'?'#10b981':toast.type==='error'?'#ef4444':'#3b82f6')),
+          borderRadius:12, padding:'16px 20px 16px 16px',
+          minWidth:320, maxWidth:460,
+          boxShadow:'0 12px 40px rgba(0,0,0,0.16)',
+          fontFamily:"'Segoe UI',Arial,sans-serif",
+          animation:'toastDrop 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+        }}>
+          <div style={{
+            width:38, height:38, borderRadius:'50%', flexShrink:0,
+            background:toast.type==='success'?'#f0fdf4':toast.type==='error'?'#fef2f2':'#eff6ff',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:17,
+          }}>
+            {toast.type==='success'?'\u2705':toast.type==='error'?'\u274c':'\u2139\ufe0f'}
+          </div>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontWeight:700, fontSize:14, color:'#0f172a', marginBottom:3}}>{toast.title}</div>
+            <div style={{fontSize:13, color:'#64748b', lineHeight:1.5}}>{toast.message}</div>
+          </div>
+          <button onClick={()=>setToast(null)}
+            style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8',fontSize:22,padding:'0 0 0 10px',lineHeight:1,flexShrink:0,alignSelf:'flex-start'}}>
+            &times;
+          </button>
+          <style>{('@keyframes toastDrop{from{opacity:0;transform:translateX(-50%) translateY(-20px) scale(0.95)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}')}</style>
+        </div>
+      )}
     </div>
   );
 };
-
 
 export default PatientList;
