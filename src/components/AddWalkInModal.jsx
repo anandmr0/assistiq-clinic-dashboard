@@ -2,6 +2,11 @@ import React, { useState,useEffect  } from 'react';
 import '../css/AddWalkInModal.css';
 import { apiFetch } from "../services/apiConfig";
 const AddWalkInModal = ({ loading, initData = {}, onClose, onSuccess }) => {
+  const [toast, setToast] = useState(null);
+  const showToast = (type, title, message, duration = 3500) => {
+    setToast({ type, title, message });
+    setTimeout(() => setToast(null), duration);
+  };
   const [formData, setFormData] = useState({
     doctorId: "",
   appointmentDate: "",
@@ -75,7 +80,7 @@ const AddWalkInModal = ({ loading, initData = {}, onClose, onSuccess }) => {
     e.preventDefault();
   
     if (!formData.doctorId || !formData.slot || !formData.patientName) {
-      alert("Please fill required fields");
+      showToast("error", "Required Fields Missing", "Please fill Doctor, Slot and Patient Name.");
       return;
     }
     const payload = {
@@ -101,10 +106,10 @@ const AddWalkInModal = ({ loading, initData = {}, onClose, onSuccess }) => {
   
      // if (!res.ok) throw new Error();
   
-      alert("Walk-in patient added successfully");
-      onSuccess();
+      showToast("success", "Walk-in Added", "Patient registered successfully.");
+      setTimeout(() => { onSuccess(); onClose(); }, 1600);
     } catch {
-      alert("Failed to add walk-in");
+      showToast("error", "Registration Failed", "Failed to add walk-in patient. Please try again.");
     }
     finally {
       setSubmitting(false); // 🔥 STOP LOADING
@@ -392,6 +397,50 @@ const getAppointmentDateOptions = () => {
           </div>
         </form>
       </div>
+
+      {/* Toast — top-center, above modal overlay */}
+      {toast && (
+        <div style={{
+          position:'fixed', top:24, left:'50%', transform:'translateX(-50%)',
+          zIndex:999999,
+          display:'flex', alignItems:'center', gap:12,
+          background:'#fff',
+          borderLeft:`4px solid ${toast.type==='success'?'#10b981':'#ef4444'}`,
+          borderRadius:12, padding:'14px 20px',
+          minWidth:300, maxWidth:440,
+          boxShadow:'0 8px 32px rgba(0,0,0,0.18)',
+          fontFamily:"'Segoe UI',Arial,sans-serif",
+          animation:'toastDrop 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+          whiteSpace:'nowrap',
+        }}>
+          <div style={{
+            width:36, height:36, borderRadius:'50%', flexShrink:0,
+            background: toast.type==='success'?'#f0fdf4':'#fef2f2',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
+          }}>
+            {toast.type==='success' ? '✅' : '❌'}
+          </div>
+          <div style={{flex:1, minWidth:0, whiteSpace:'normal'}}>
+            <div style={{fontWeight:700, fontSize:13.5, color:'#0f172a', marginBottom:2}}>
+              {toast.title}
+            </div>
+            <div style={{fontSize:12.5, color:'#64748b', lineHeight:1.4}}>
+              {toast.message}
+            </div>
+          </div>
+          <button onClick={()=>setToast(null)}
+            style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8',
+              fontSize:20, padding:'0 0 0 10px', lineHeight:1, flexShrink:0}}>
+            ×
+          </button>
+          <style>{`
+            @keyframes toastDrop {
+              from { opacity:0; transform:translateX(-50%) translateY(-16px) scale(0.96); }
+              to   { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 };

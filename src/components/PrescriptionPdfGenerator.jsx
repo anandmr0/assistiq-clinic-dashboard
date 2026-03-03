@@ -1,4 +1,5 @@
 import html2canvas from 'html2canvas';
+import { translateField } from './prescriptionTranslations';
 import { jsPDF }   from 'jspdf';
 
 // ── helpers (same as PrescriptionPad.jsx) ────────────────────────────────────
@@ -161,7 +162,7 @@ const PRESCRIPTION_CSS = `
 `;
 
 // ── Build the prescription HTML body ─────────────────────────────────────────
-function buildPrescriptionBody(patient, data, doctorInfo) {
+function buildPrescriptionBody(patient, data, doctorInfo, lang = 'en') {
   const vitals = data?.vitalSigns || {};
   const prx    = (data?.prescriptions || []).filter(p => p.medicineName);
   const today  = new Date().toLocaleDateString('en-IN');
@@ -187,9 +188,9 @@ function buildPrescriptionBody(patient, data, doctorInfo) {
               <div class="med-name">${escHtml(med.medicineName)}</div>
               <div class="med-instructions">
                 ${med.dosage    ? `<span class="med-dosage">${escHtml(med.dosage)}</span>`             : ''}
-                ${med.frequency ? `<span class="med-frequency">${escHtml(fmtFreq(med.frequency))}</span>` : ''}
-                ${med.duration  ? `<span class="med-duration">${escHtml(fmtDur(med.duration))}</span>`   : ''}
-                ${med.timing    ? `<span class="med-timing">${escHtml(fmtTiming(med.timing))}</span>`    : ''}
+                ${med.frequency ? `<span class="med-frequency">${escHtml(translateField('frequency', med.frequency, lang))}</span>` : ''}
+                ${med.duration  ? `<span class="med-duration">${escHtml(translateField('duration', med.duration, lang))}</span>`   : ''}
+                ${med.timing    ? `<span class="med-timing">${escHtml(translateField('timing', med.timing, lang))}</span>`    : ''}
               </div>
               ${med.notes ? `<div class="med-notes">${escHtml(med.notes)}</div>` : ''}
             </div>
@@ -295,7 +296,7 @@ function buildPrescriptionBody(patient, data, doctorInfo) {
 //
 // Returns null on error (caller should still proceed with saving the appointment).
 // ─────────────────────────────────────────────────────────────────────────────
-export async function generatePrescriptionPdfBase64(patient, data, doctorInfo) {
+export async function generatePrescriptionPdfBase64(patient, data, doctorInfo, lang = 'en') {
   try {
     // ── 1. Create a hidden container and inject the prescription HTML ──────
     const container = document.createElement('div');
@@ -315,7 +316,7 @@ export async function generatePrescriptionPdfBase64(patient, data, doctorInfo) {
     container.appendChild(styleEl);
 
     // Inject body HTML
-    container.innerHTML += buildPrescriptionBody(patient, data, doctorInfo);
+    container.innerHTML += buildPrescriptionBody(patient, data, doctorInfo, lang);
     document.body.appendChild(container);
 
     // ── 2. Wait a tick for fonts + images to load ──────────────────────────
