@@ -1,4 +1,3 @@
-
 import html2canvas from 'html2canvas';
 import { jsPDF }   from 'jspdf';
 
@@ -94,7 +93,7 @@ const PRESCRIPTION_CSS = `
     padding-left: 0.5rem;
   }
   .handwritten-text {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
     font-size: 1rem; color: #1F2937; line-height: 1.6;
     padding-left: 0.25rem;
   }
@@ -119,7 +118,7 @@ const PRESCRIPTION_CSS = `
     border: 1px solid #D1FAE5;
   }
   .med-number   { font-weight: 700; color: #10B981; font-size: 1rem; min-width: 20px; }
-  .med-name     { font-weight: 700; font-size: 1rem; color: #1F2937; margin-bottom: 0.25rem; font-style: italic; }
+  .med-name     { font-weight: 700; font-size: 1rem; color: #1F2937; margin-bottom: 0.25rem; font-style: normal; font-family: 'Segoe UI', Arial, Helvetica, sans-serif; letter-spacing: 0.01em; }
   .med-instructions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; }
   .med-instructions span { font-size: 0.8rem; padding: 0.15rem 0.5rem; border-radius: 20px; }
   .med-dosage    { background:#EFF6FF; color:#1a56db; font-weight:600; }
