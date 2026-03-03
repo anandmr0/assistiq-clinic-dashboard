@@ -413,7 +413,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
       await onRefreshAppointments();
     } catch (error) {
       console.error('Error refreshing:', error);
-      showToast('error', 'Refresh Failed', 'Failed to refresh. Please try again.');
+      showToast('error', 'Refresh Failed', 'Failed to refresh appointments. Try again.');
     } finally {
       setIsRefreshing(false);
     }
@@ -550,12 +550,12 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
 
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      showToast('error', 'File Too Large', 'Please upload a file smaller than 5MB.');
+      showToast('error', 'File Too Large', 'Upload a file smaller than 5MB.');
       return;
     }
 
     if (file.type !== 'application/pdf') {
-      showToast('error', 'Invalid File Type', 'Only PDF files are allowed.');
+      showToast('error', 'Invalid File', 'Only PDF files are allowed.');
       return;
     }
 
@@ -591,10 +591,10 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
       };
       reader.readAsDataURL(file);
 
-      showToast('success', 'Report Uploaded', 'Patient report uploaded successfully.');
+      showToast('success', 'Report Uploaded', 'Report uploaded successfully.');
     } catch (error) {
       console.error('Error uploading report:', error);
-      showToast('error', 'Upload Failed', 'Failed to upload report. Try again.');
+      showToast('error', 'Upload Failed', 'Failed to upload. Try again.');
     }
   };
   const handleRemoveReport = async (patientId, reportId) => {
@@ -618,10 +618,10 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
         };
       });
 
-      showToast('success', 'Report Deleted', 'Report removed successfully.');
+      showToast('success', 'Report Deleted', 'Report removed.');
     } catch (error) {
       console.error('Error deleting report:', error);
-      showToast('error', 'Delete Failed', 'Failed to delete report. Try again.');
+      showToast('error', 'Delete Failed', 'Failed to delete. Try again.');
     }
   };
   // Handle test selection
@@ -671,26 +671,30 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
       (p) =>
         p.medicineName && p.dosage && p.frequency && p.duration && p.timing
     );
-    let prescriptionPdfBase64 = null;
-    try {
-      prescriptionPdfBase64 = await generatePrescriptionPdfBase64(
-        patient,
-        data,
-        {
-          name:          doctorsInfo?.name          || '',
-          qualification: doctorsInfo?.specialization || '',
-          regNo:         doctorsInfo?.regNo          || '',
-          clinicName:    doctorsInfo?.clinicName     || '',
-          address:       doctorsInfo?.address        || '',
-          phoneNumber:   doctorsInfo?.phoneNumber    || '',
-        },
-        data.prescriptionLanguage || 'en'
-      );
-    } catch (pdfErr) {
-      console.warn('[handleMarkComplete] PDF generation skipped:', pdfErr);
-    }
-    const prescriptionBodyHtml = buildPrescriptionHtml(patient, data, doctorsInfo);
-    const prescriptionHtml = `<!DOCTYPE html>
+  let prescriptionPdfBase64 = null;
+  let prescriptionHtml      = null;
+
+    const hasPrescription = cleanPrescriptions.length > 0;
+  if (hasPrescription) {
+  try {
+    prescriptionPdfBase64 = await generatePrescriptionPdfBase64(
+      patient, data,
+      {
+        name:          doctorsInfo?.name          || '',
+        qualification: doctorsInfo?.specialization || '',
+        regNo:         doctorsInfo?.regNo          || '',
+        clinicName:    doctorsInfo?.clinicName     || '',
+        address:       doctorsInfo?.address        || '',
+        phoneNumber:   doctorsInfo?.phoneNumber    || '',
+      },
+      data.prescriptionLanguage || 'en'
+    );
+  } catch (pdfErr) {
+    console.warn('[handleMarkComplete] PDF generation skipped:', pdfErr);
+  }
+
+  const prescriptionBodyHtml = buildPrescriptionHtml(patient, data, doctorsInfo);
+  prescriptionHtml = `<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8"/>
@@ -699,6 +703,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
   </head>
   <body>${prescriptionBodyHtml}</body>
 </html>`;
+}
  // ── Canvas / handwritten note ──
     // Structured as a nested object matching CompleteAppointmentRequest.CanvasNoteDto
     const canvasNote = data.canvasNote
@@ -779,17 +784,21 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
       console.log("Request Sent:", payload);
       showToast('success', 'Consultation Completed', `${patient.name}'s consultation saved and prescription dispatched.`, 5000);
       setExpandedAppointment(null);
-      setPatientData((prev) => {
-        const updated = { ...prev };
-        delete updated[patient.appointmentId];
-        return updated;
-      });
-      if (onRefreshAppointments) {
-        setTimeout(() => onRefreshAppointments(), 1800);
-      }
+    //   setPatientData(prev => ({
+    //   ...prev,
+    //   [patient.patientId]: {}
+    // }));
+    setPatientData((prev) => {
+      const updated = { ...prev };
+      delete updated[patient.appointmentId];
+      return updated;
+    });
+    if (onRefreshAppointments) {
+      setTimeout(() => onRefreshAppointments(), 1800);
+    }
   } catch (err) {
     console.error(err);
-    showToast('error', 'Save Failed', 'Failed to save consultation. Please check your connection.');
+    showToast('error', 'Save Failed', 'Failed to save consultation. Check connection and try again.');
 
   }
   finally {
@@ -1352,12 +1361,12 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
                                   value={prescription.medicineName || ''}
                                   disabled={isConsultationLocked}
                                   onChange={(name, defaults) => {
-                                    handlePrescriptionChange(patient.appointmentId, index, 'medicineName', name);
+                                    handlePrescriptionChange(patient.appointmentId, idx, 'medicineName', name);
                                     if (defaults) {
-                                      handlePrescriptionChange(patient.appointmentId, index, 'dosage',    defaults.dosage);
-                                      handlePrescriptionChange(patient.appointmentId, index, 'frequency', defaults.frequency);
-                                      handlePrescriptionChange(patient.appointmentId, index, 'duration',  defaults.duration);
-                                      handlePrescriptionChange(patient.appointmentId, index, 'timing',    defaults.timing);
+                                      handlePrescriptionChange(patient.appointmentId, idx, 'dosage',    defaults.dosage);
+                                      handlePrescriptionChange(patient.appointmentId, idx, 'frequency', defaults.frequency);
+                                      handlePrescriptionChange(patient.appointmentId, idx, 'duration',  defaults.duration);
+                                      handlePrescriptionChange(patient.appointmentId, idx, 'timing',    defaults.timing);
                                     }
                                   }}
                               />
@@ -1742,17 +1751,18 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
             background:toast.type==='success'?'#f0fdf4':toast.type==='error'?'#fef2f2':'#eff6ff',
             display:'flex', alignItems:'center', justifyContent:'center', fontSize:17,
           }}>
-            {toast.type==='success'?'\u2705':toast.type==='error'?'\u274c':'\u2139\ufe0f'}
+            {toast.type==='success' ? '\u2705' : toast.type==='error' ? '\u274c' : '\u2139\ufe0f'}
           </div>
           <div style={{flex:1, minWidth:0}}>
             <div style={{fontWeight:700, fontSize:14, color:'#0f172a', marginBottom:3}}>{toast.title}</div>
             <div style={{fontSize:13, color:'#64748b', lineHeight:1.5}}>{toast.message}</div>
           </div>
           <button onClick={()=>setToast(null)}
-            style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8',fontSize:22,padding:'0 0 0 10px',lineHeight:1,flexShrink:0,alignSelf:'flex-start'}}>
+            style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8',
+              fontSize:22, padding:'0 0 0 10px', lineHeight:1, flexShrink:0, alignSelf:'flex-start'}}>
             &times;
           </button>
-          <style>{('@keyframes toastDrop{from{opacity:0;transform:translateX(-50%) translateY(-20px) scale(0.95)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}')}</style>
+          <style>{`@keyframes toastDrop{from{opacity:0;transform:translateX(-50%) translateY(-20px) scale(0.95)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}`}</style>
         </div>
       )}
     </div>

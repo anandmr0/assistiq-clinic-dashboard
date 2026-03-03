@@ -41,8 +41,8 @@ export const fetchDashboardData = async (doctorId, clinicId) => {
        examinationFindings: a.examinationFindings || "",
          notes:a.notes,
        /* ---- Vital Signs ---- */
-        systolic: a.systolicBp ?? null,
-        diastolic: a.diastolicBp ?? null,
+        systolic: a.systolicBP ?? null,
+        diastolic: a.diastolicBP ?? null,
         pulse: a.pulseRate ?? null,
         temperature: a.temperature ?? null,
         weight: a.weight ?? null,
