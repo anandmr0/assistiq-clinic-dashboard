@@ -77,7 +77,7 @@ export const fetchDashboardData = async (doctorId, clinicId) => {
         url: r.url  // Backend should provide download URL
       })),
         selectedTests: a.selectedTests || [],
-        prescriptionSent: a.prescriptionSent || false,
+        prescriptionSent: a.prescriptionSent || true,
         
        appointmentDate: a.appointmentDate,
         canvasNotes: a.canvasNoteImage
