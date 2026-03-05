@@ -3,6 +3,7 @@ import '../css/PatientList.css';
 import AddWalkInModal from './AddWalkInModal';
 import PrescriptionPad, { buildPrescriptionHtml, getPrescriptionPageCss } from './PrescriptionPad';
 import CanvasNoteModal from './CanvasNoteModal';
+import PatientHistoryPanel from './PatientHistoryPanel';
 import { apiFetch } from "../services/apiConfig";
 import { generatePrescriptionPdfBase64 } from './PrescriptionPdfGenerator';
 import MedicineAutocomplete from './MedicineAutocomplete';
@@ -1097,6 +1098,12 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
 
                 {isExpanded && (
                   <div className="patient-expanded-content">
+
+                    {/* ── Patient Visit History ── */}
+                    <PatientHistoryPanel
+                      patientId={patient.patientId}
+                      currentAppointmentId={patient.appointmentId}
+                    />
 
                     {/* ── Action buttons row at top of expanded panel ── */}
                     <div className="consultation-top-actions">
