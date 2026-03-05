@@ -161,6 +161,14 @@ const getAppointmentDateOptions = () => {
       return value; // day after or custom
   }
 };
+const formatTime = (timeStr) => {
+  if (!timeStr) return "";
+  const [hours, minutes] = timeStr.split(':');
+  const h = parseInt(hours);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${minutes} ${ampm}`;
+};
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -260,7 +268,7 @@ const getAppointmentDateOptions = () => {
                 🌅 Morning  
                 {selectedDoctor?.morningAvailable && (
                 <span className="radio-time">
-                    {selectedDoctor.morningStart} - {selectedDoctor.morningEnd}
+                    {formatTime(selectedDoctor.morningStart)} - {formatTime(selectedDoctor.morningEnd)}
                 </span>
                 )}
             </label>
@@ -275,7 +283,7 @@ const getAppointmentDateOptions = () => {
                 🌙 Evening  
                 {selectedDoctor?.eveningAvailable && (
                 <span className="radio-time">
-                    {selectedDoctor.eveningStart} - {selectedDoctor.eveningEnd}
+                    {formatTime(selectedDoctor.eveningStart)} - {formatTime(selectedDoctor.eveningEnd)}
                 </span>
                 )}
             </label>

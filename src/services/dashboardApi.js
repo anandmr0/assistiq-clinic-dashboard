@@ -3,135 +3,125 @@ import { apiFetch } from "./apiConfig";
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "https://assistiq-whatsapp-bot.onrender.com/api";
 
-export const fetchDashboardData = async (doctorId, clinicId) => {
+const mapAppointment = (a) => ({
+  patientId:           a.patient?.id,
+  appointmentId:       a.id,
+  name:                a.patient?.name || "Unknown",
+  phoneNumber:         a.patient?.phone || a.patient?.phoneNumber || "",
+  tokenNumber:         a.tokenNumber || "",
+  status:              a.status || "SCHEDULED",
+  age:                 a.patient?.age || "",
+  gender:              a.patient?.gender || "",
+  reason:              a.notes || "N/A",
+  symptoms:            a.symptoms || "",
+  diagnosis:           a.diagnosis || "",
+  chiefComplaint:      a.chiefComplaint || "",
+  examinationFindings: a.examinationFindings || "",
+  notes:               a.notes,
+  /* Vitals */
+  systolic:    a.systolicBP  ?? null,
+  diastolic:   a.diastolicBP ?? null,
+  pulse:       a.pulseRate   ?? null,
+  temperature: a.temperature ?? null,
+  weight:      a.weight      ?? null,
+  height:      a.height      ?? null,
+  spo2:        a.spo2        ?? null,
+  /* Treatment advice */
+  dietaryAdvice:   a.dietaryInstructions   || "",
+  lifestyleAdvice: a.lifestyleInstructions || "",
+  generalAdvice:   a.generalInstructions   || "",
+  warningAdvice:   a.warningSigns          || "",
+  nextVisitDate:   a.nextVisitDate  || "",
+  nextVisitNotes:  a.nextVisitNotes || "",
+  prescriptionSent: a.prescriptionSent || false,
+  internalNotes:    a.internalNotes   || "",
+  prescriptions: (a.prescriptions || []).map(p => ({
+    id:           p.id,
+    medicineName: p.medicineName || "",
+    dosage:       p.dosage       || "",
+    frequency:    p.frequency    || "once_daily",
+    duration:     p.duration     || "",
+    timing:       p.timing       || "after_food",
+    notes:        p.notes        || "",
+  })),
+  reports: (a.reports || []).map(r => ({
+    id:         r.id,
+    name:       r.name,
+    size:       r.size,
+    uploadDate: r.uploadDate,
+    url:        r.url,
+  })),
+  selectedTests:   a.selectedTests   || [],
+  appointmentDate: a.appointmentDate,
+  canvasNotes: a.canvasNoteImage
+    ? [{
+        imageDataUrl: a.canvasNoteImage,
+        pdfDataUrl:   null,
+        createdAt:    a.canvasNoteCreatedAt || null,
+        visitDate:    a.appointmentDate     || a.canvasNoteCreatedAt || null,
+      }]
+    : [],
+});
+export const fetchTodayDashboardData = async (doctorId, clinicId) => {
   try {
-     const doctorDetails=await apiFetch(`/doctors/${doctorId}`);
-     console.log(doctorDetails);
-    const appointments = await apiFetch(
-      `/dashboard/appointment?doctorId=${doctorId}&clinicId=${clinicId}`
-    );
-   // console.log(response);
-    
-   
-     //const appointments = await response.json();
-     const normalizeStatus = (s) => (s || "").toUpperCase();
-     console.log("appointments"+appointments)
-     const todayStr = new Date().toISOString().split("T")[0];
-      const isToday = (dateStr) => {
-        if (!dateStr) return false;
-        return new Date(dateStr).toISOString().split("T")[0] === todayStr;
-      };
-     // Doctor Info
-     const doctorInfo = doctorDetails ?? null;
- 
-     // Map ALL appointments to UI-safe structure
-     const mappedAppointments = (appointments || []).map(a => ({
-       patientId: a.patient?.id,
-       appointmentId: a.id,
-       name: a.patient?.name || "Unknown",
-       phoneNumber: a.patient?.phone || "",
-       tokenNumber: a.tokenNumber || "",
-       status: a.status || "SCHEDULED",
-       age: a.patient?.age || "",
-       gender:a.patient?.gender || "",
-       reason: a.notes || "N/A",
-       symptoms: a.symptoms || "",
-       diagnosis: a.diagnosis || "",
-       chiefComplaint: a.chiefComplaint || "",
-       examinationFindings: a.examinationFindings || "",
-         notes:a.notes,
-       /* ---- Vital Signs ---- */
-        systolic: a.systolicBP ?? null,
-        diastolic: a.diastolicBP ?? null,
-        pulse: a.pulseRate ?? null,
-        temperature: a.temperature ?? null,
-        weight: a.weight ?? null,
-        height: a.height ?? null,
-        spo2: a.spo2 ?? null,
-       /* ---- Treatment Advice ---- */
-      dietaryAdvice: a.dietaryInstructions || "",
-      lifestyleAdvice: a.lifestyleInstructions || "",
-      generalAdvice: a.generalInstructions || "",
-      warningAdvice: a.warningSigns || "",
-       nextVisitDate: a.nextVisitDate || "",
-       nextVisitNotes: a.nextVisitNotes || "",
-       prescriptions: a.prescriptions || [],
-       prescriptionSent: a.prescriptionSent || false,
-       internalNotes:a.internalNotes || "",
-        // Prescriptions - map from backend
-      prescriptions: (a.prescriptions || []).map(p => ({
-        id: p.id,
-        medicineName: p.medicineName || "",
-        dosage: p.dosage || "",
-        frequency: p.frequency || "once_daily",
-        duration: p.duration || "",
-        timing: p.timing || "after_food",
-        notes: p.notes || ""
-      })),
-       // Reports - map from backend with proper URL
-      reports: (a.reports || []).map(r => ({
-        id: r.id,
-        name: r.name,
-        size: r.size,
-        uploadDate: r.uploadDate,
-        url: r.url  // Backend should provide download URL
-      })),
-        selectedTests: a.selectedTests || [],
-        prescriptionSent: a.prescriptionSent || true,
-        
-       appointmentDate: a.appointmentDate,
-        canvasNotes: a.canvasNoteImage
-        ? [{
-            imageDataUrl: a.canvasNoteImage,
-            pdfDataUrl:   null,
-            createdAt:    a.canvasNoteCreatedAt || null,
-            visitDate:    a.appointmentDate     || a.canvasNoteCreatedAt || null,
-          }]
-        : [],
-       
-     }));
-        const todayAppointments = mappedAppointments.filter(a => isToday(a.appointmentDate));
+    const [doctorDetails, activeAppts, completedAppts, stats] = await Promise.all([
+      apiFetch(`/doctors/${doctorId}`),
+      apiFetch(`/dashboard/appointment/today/active?doctorId=${doctorId}&clinicId=${clinicId}`),
+      apiFetch(`/dashboard/appointment/today/completed?doctorId=${doctorId}&clinicId=${clinicId}`),
+       apiFetch(`/dashboard/appointment/stats?doctorId=${doctorId}&clinicId=${clinicId}`),
+    ]);
 
-      // 🔹 Today's ACTIVE (not completed or cancelled)
-      const todayActiveAppointments = todayAppointments.filter(a => {
-        const status = normalizeStatus(a.status);
-        return status !== "COMPLETED" && status !== "CANCELLED";
-      });
+    const activeList    = (activeAppts    || []).map(mapAppointment);
+    const completedList = (completedAppts || []).map(mapAppointment);
+    const todayAll      = [...activeList, ...completedList];
 
-      // 🔹 Today's COMPLETED
-      const todayCompletedAppointments = todayAppointments.filter(a =>
-        normalizeStatus(a.status) === "COMPLETED"
-      );
+    console.log("TODAY ACTIVE:",    activeList.length);
+    console.log("TODAY COMPLETED:", completedList.length);
 
-      console.log("TODAY:", todayStr);
-      console.log("TODAY APPOINTMENTS:", todayAppointments);
-      console.log("TODAY ACTIVE:", todayActiveAppointments);
+    return {
+      doctor:               doctorDetails ?? null,
+      todayPatients:        todayAll,
+      activeAppointments:   activeList,
+      completedAppointments: completedList,
+      totalPatients:         stats?.totalPatients || 0,
+      
+    };
+  } catch (error) {
+    console.error("Dashboard API error:", error);
+    return {
+      doctor: null,
+      todayPatients:        [],
+      activeAppointments:   [],
+      completedAppointments: [],
+      totalPatients: 0,
+    };
+  }
+};
+export const fetchAllAppointments = async (doctorId, clinicId, page = 0, search = "") => {
+  try {
+    const params = new URLSearchParams({
+      doctorId,
+      clinicId,
+      page,
+      size: 10,
+      ...(search ? { search } : {}),
+    });
 
-     return {
-        doctor: doctorInfo,
+    const result = await apiFetch(`/dashboard/appointment/all?${params}`);
+    const pageInfo = result?.page ?? result;
 
-  // ✅ UNIQUE PATIENT COUNTS
-  todayPatients: getUniquePatients(todayAppointments),
-  activeAppointments: getUniquePatients(todayActiveAppointments),
-  completedAppointments: getUniquePatients(todayCompletedAppointments),
-
-  // Full lists still available if needed
-  allAppointments: mappedAppointments,
-
-  totalPatients: getUniquePatients(mappedAppointments).length
-     };
-   } catch (error) {
-     console.error("Dashboard API error:", error);
-     return {
-       doctor: null,
-       todayPatients: [],
-       activeAppointments: [],
-       completedAppointments: [],
-       allAppointments: [],
-       totalPatients: 0
-     };
-   }
- };
+    return {
+      appointments:  (result?.content || []).map(mapAppointment),
+      totalPages:    pageInfo?.totalPages    || 0,
+      totalElements: pageInfo?.totalElements || 0,
+      currentPage:   pageInfo?.number        || 0,
+    };
+  } catch (error) {
+    console.error("All appointments fetch error:", error);
+    return { appointments: [], totalPages: 0, totalElements: 0, currentPage: 0 };
+  }
+};
+export const fetchDashboardData = fetchTodayDashboardData;
 const getUniquePatients = (appointments) => {
   const map = new Map();
   appointments.forEach(a => {
