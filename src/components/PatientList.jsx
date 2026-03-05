@@ -3,6 +3,7 @@ import '../css/PatientList.css';
 import AddWalkInModal from './AddWalkInModal';
 import PrescriptionPad, { buildPrescriptionHtml, getPrescriptionPageCss } from './PrescriptionPad';
 import CanvasNoteModal from './CanvasNoteModal';
+import PatientHistoryPanel from './PatientHistoryPanel';
 import { apiFetch } from "../services/apiConfig";
 import { generatePrescriptionPdfBase64 } from './PrescriptionPdfGenerator';
 import MedicineAutocomplete from './MedicineAutocomplete';
@@ -269,8 +270,8 @@ const InternalNotesSection = ({ patient, data, handleInputChange, isLocked }) =>
     />
   </div>
 );
-const PatientList = ({ patients,  todayPatients, activePatients, completedPatients,onPatientSelect,  onRefreshAppointments,
-  updatePatientStatus,doctorId,clinicId,doctors = [],doctorsInfo }) => {
+const PatientList = ({ todayPatients, activePatients, completedPatients, onPatientSelect, onRefreshAppointments,
+  updatePatientStatus, doctorId, clinicId, doctors = [], doctorsInfo, fetchAllAppointments }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('confirmed');
   const [expandedAppointment, setExpandedAppointment] = useState(null);
@@ -287,9 +288,16 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
     const [showPrescriptionPad, setShowPrescriptionPad] = useState(null);
   const [showCanvasNote,      setShowCanvasNote]       = useState(null);
   const [toast, setToast] = useState(null);
- // Pagination state for patient list
+ // Pagination state for Active/Completed tabs (frontend)
   const [patientCurrentPage, setPatientCurrentPage] = useState(1);
   const patientsPerPage = 10;
+
+  // ── All tab — backend-paginated ──────────────────────────────
+  const [allTabData,       setAllTabData]       = useState([]);
+  const [allTabPage,       setAllTabPage]       = useState(0);   // 0-based (Spring)
+  const [allTabTotalPages, setAllTabTotalPages] = useState(0);
+  const [allTabLoading,    setAllTabLoading]    = useState(false);
+
   const showToast = (type, title, message, duration = 4500) => {
     setToast({ type, title, message });
     setTimeout(() => setToast(null), duration);
@@ -300,28 +308,58 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
     setPatientCurrentPage(1);
   }, [searchTerm, filterStatus]);
 
+  // ── Seed patientData from today's lists (active + completed) ──
   useEffect(() => {
-    if (!patients?.length) return;
-  
+    const allToday = [...(activePatients || []), ...(completedPatients || [])];
+    if (!allToday.length) return;
     setPatientData(prev => {
       const updated = { ...prev };
-  
-      patients.forEach(patient => {
+      allToday.forEach(patient => {
         if (!patient.patientId) return;
-  
         const existing = updated[patient.appointmentId] || {};
-  
         updated[patient.appointmentId] = {
           ...existing,
           selectedTests: Array.isArray(patient.selectedTests)
             ? patient.selectedTests
-            : existing.selectedTests || []
+            : existing.selectedTests || [],
         };
       });
-  
       return updated;
     });
-  }, [patients]);
+  }, [activePatients, completedPatients]);
+
+  // ── Load All tab on first open ──
+  useEffect(() => {
+    if (filterStatus === 'all' && allTabData.length === 0 && !allTabLoading) {
+      loadAllTab(0, '');
+    }
+  }, [filterStatus]);
+
+  // ── Debounced backend search for All tab ──
+  useEffect(() => {
+    if (filterStatus !== 'all') return;
+    const timer = setTimeout(() => {
+      loadAllTab(0, searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm, filterStatus]);
+
+  const loadAllTab = async (page, search) => {
+    if (!fetchAllAppointments) return;
+    setAllTabLoading(true);
+    try {
+      const result = await fetchAllAppointments(page, search);
+      setAllTabData(result.appointments);
+      setAllTabTotalPages(result.totalPages);
+      setAllTabPage(result.currentPage);
+      setExpandedAppointment(null);
+    } catch (err) {
+      console.error('Failed to load all appointments:', err);
+      showToast('error', 'Load Failed', 'Could not load appointments. Try again.');
+    } finally {
+      setAllTabLoading(false);
+    }
+  };
   
   
   const getEmptyPrescription = () => ({
@@ -332,44 +370,40 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
     timing: 'after_food',
     notes: ''
   });
-   const getBasePatients = () => {
-    if (filterStatus === 'confirmed') {
-      return activePatients || []; // Today's active patients
-    } else if (filterStatus === 'completed') {
-      return completedPatients || []; // Today's completed patients
-    } else if (filterStatus === 'all') {
-      return patients || []; // All appointments (history)
-    }
+  const getBasePatients = () => {
+    if (filterStatus === 'confirmed') return activePatients   || [];
+    if (filterStatus === 'completed') return completedPatients || [];
+    if (filterStatus === 'all')       return allTabData;        // ✅ backend-paginated
     return [];
   };
-  const filteredPatients = getBasePatients().filter(patient => {
-    const name = patient.name?.toLowerCase() || "";
-    const phone = (patient.phoneNumber || "").toString();
-  const term = searchTerm.toLowerCase().trim();
 
-  const matchesSearch = name.includes(term) || phone.includes(term);
-    let matchesStatus = true;
-  
-    if (filterStatus === 'confirmed') {
-      // Confirmed tab shows CONFIRMED + SCHEDULED
-      matchesStatus = ['CONFIRMED', 'SCHEDULED'].includes(patient.status);
-    } else if (filterStatus === 'scheduled') {
-      matchesStatus = patient.status === 'SCHEDULED';
-    } else if(filterStatus === 'completed')
-    {
-      matchesStatus = patient.status === 'COMPLETED';
-    }
-    else if (filterStatus === 'all') {
-      matchesStatus = true;
-    }
-  
-    return matchesSearch && matchesStatus;
-  });
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
-  const startIndex = (patientCurrentPage - 1) * patientsPerPage;
-  const endIndex = startIndex + patientsPerPage;
-  const paginatedPatients = filteredPatients.slice(startIndex, endIndex);
+  // For Active/Completed tabs — filter client-side
+  // For All tab — backend already filtered/searched, just display
+  const filteredPatients = filterStatus === 'all'
+    ? allTabData
+    : getBasePatients().filter(patient => {
+        const name  = patient.name?.toLowerCase() || "";
+        const phone = (patient.phoneNumber || "").toString();
+        const term  = searchTerm.toLowerCase().trim();
+        const matchesSearch = name.includes(term) || phone.includes(term);
+
+        let matchesStatus = true;
+        if (filterStatus === 'confirmed') {
+          matchesStatus = ['CONFIRMED', 'SCHEDULED'].includes(patient.status);
+        } else if (filterStatus === 'completed') {
+          matchesStatus = patient.status === 'COMPLETED';
+        }
+        return matchesSearch && matchesStatus;
+      });
+
+  // ── Frontend pagination (Active / Completed tabs only) ──
+  const totalPages         = Math.ceil(filteredPatients.length / patientsPerPage);
+  const startIndex         = (patientCurrentPage - 1) * patientsPerPage;
+  const endIndex           = startIndex + patientsPerPage;
+  // All tab: data is already one page from backend, no need to slice
+  const paginatedPatients  = filterStatus === 'all'
+    ? filteredPatients
+    : filteredPatients.slice(startIndex, endIndex);
 
   // Pagination handlers
   const goToPage = (pageNumber) => {
@@ -422,7 +456,7 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
     e.stopPropagation();
     const isOpening = expandedAppointment !== patient.appointmentId;
     setExpandedAppointment(isOpening ? patient.appointmentId : null);
-
+    console.log("Patient Data:", patient);
     if (isOpening) {
       // Auto-populate data from database
       setPatientData(prev => ({
@@ -448,14 +482,15 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
           examinationFindings: patient.examinationFindings  || "",
           internalNotes:       patient.internalNotes        || "",
            // ── Vital signs — kept as nested object (matches VitalSignsSection) ──
+           
           vitalSigns: {
-            systolic:    patient.vitalSigns?.systolic    ?? null,
-            diastolic:   patient.vitalSigns?.diastolic   ?? null,
-            pulse:       patient.vitalSigns?.pulse       ?? null,
-            temperature: patient.vitalSigns?.temperature ?? null,
-            weight:      patient.vitalSigns?.weight      ?? null,
-            height:      patient.vitalSigns?.height      ?? null,
-            spo2:        patient.vitalSigns?.spo2        ?? null,
+            systolic:    patient.systolic    ?? null,
+            diastolic:   patient.diastolic   ?? null,
+            pulse:       patient.pulse       ?? null,
+            temperature: patient.temperature ?? null,
+            weight:      patient.weight      ?? null,
+            height:      patient.height      ?? null,
+            spo2:        patient.spo2        ?? null,
           },
            // ── Treatment Advice ───────────────────────────────────────────────
           dietaryAdvice:   patient.dietaryAdvice   || "",
@@ -915,7 +950,15 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
         </div>
       </div>
 
-      {filteredPatients.length === 0 ? (
+      {/* All-tab loading spinner */}
+      {filterStatus === 'all' && allTabLoading && (
+        <div className="empty-state">
+          <div className="loading-spinner" />
+          <p>Loading appointments...</p>
+        </div>
+      )}
+
+      {filteredPatients.length === 0 && !(filterStatus === 'all' && allTabLoading) ? (
         <div className="empty-state">
           <svg viewBox="0 0 24 24" fill="none">
             <path d="M20 21V19C20 16.7909 18.2091 15 16 15H8C5.79086 15 4 16.7909 4 19V21" stroke="currentColor" strokeWidth="2"/>
@@ -1055,6 +1098,12 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
 
                 {isExpanded && (
                   <div className="patient-expanded-content">
+
+                    {/* ── Patient Visit History ── */}
+                    <PatientHistoryPanel
+                      patientId={patient.patientId}
+                      currentAppointmentId={patient.appointmentId}
+                    />
 
                     {/* ── Action buttons row at top of expanded panel ── */}
                     <div className="consultation-top-actions">
@@ -1617,8 +1666,39 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
         </>
       )}
 
-      {/* Pagination Controls */}
-        {filteredPatients.length > patientsPerPage && (
+      {/* ── Backend pagination — All tab ── */}
+      {filterStatus === 'all' && allTabTotalPages > 1 && (
+        <div className="pagination-controls">
+          <button
+            className="pagination-btn"
+            onClick={() => loadAllTab(allTabPage - 1, searchTerm)}
+            disabled={allTabPage === 0 || allTabLoading}
+          >
+            <svg viewBox="0 0 24 24" fill="none" style={{ width: 20, height: 20 }}>
+              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Previous
+          </button>
+
+          <span style={{ padding: '0 1rem', fontSize: 14, color: '#64748b', alignSelf: 'center' }}>
+            Page {allTabPage + 1} of {allTabTotalPages}
+          </span>
+
+          <button
+            className="pagination-btn"
+            onClick={() => loadAllTab(allTabPage + 1, searchTerm)}
+            disabled={allTabPage + 1 >= allTabTotalPages || allTabLoading}
+          >
+            Next
+            <svg viewBox="0 0 24 24" fill="none" style={{ width: 20, height: 20 }}>
+              <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* ── Frontend pagination — Active / Completed tabs ── */}
+      {filterStatus !== 'all' && filteredPatients.length > patientsPerPage && (
           <div className="pagination-controls">
             <button 
               className="pagination-btn" 
@@ -1633,7 +1713,6 @@ const PatientList = ({ patients,  todayPatients, activePatients, completedPatien
             
             <div className="pagination-numbers">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
-                // Show first page, last page, current page, and pages around current
                 const showPage = 
                   pageNum === 1 ||
                   pageNum === totalPages ||

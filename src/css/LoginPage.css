@@ -22,7 +22,10 @@
   position: relative;
   overflow: hidden;
 }
-
+.brand-highlight {
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 800;
+}
 /* Subtle dot-grid texture */
 .login-panel-left::before {
   content: '';

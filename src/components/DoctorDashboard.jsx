@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import '../css/DoctorDashboard.css';
 import DashboardStats from './DashboardStats';
 import PatientList from './PatientList';
-import ChangePasswordModal from './ChangePasswordModal'; // ← import
-import { fetchDashboardData } from '../services/dashboardApi.js';
+import ChangePasswordModal from './ChangePasswordModal';
+import { fetchTodayDashboardData, fetchAllAppointments } from '../services/dashboardApi.js';
 import { useAuth } from '../context/AuthContext';
 
 const DoctorDashboard = ({ doctorId, clinicId }) => {
@@ -12,7 +12,7 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
   const [loading, setLoading]                         = useState(true);
   const [currentTime, setCurrentTime]                 = useState(new Date());
   const [showLogout, setShowLogout]                   = useState(false);
-  const [showChangePassword, setShowChangePassword]   = useState(false); // ← new
+  const [showChangePassword, setShowChangePassword]   = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -23,11 +23,12 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
     if (doctorId && clinicId) loadDashboard(doctorId, clinicId);
   }, [doctorId, clinicId]);
 
+  // ── Only fetches today's active + completed — fast ──
   const loadDashboard = async (doctorId, clinicId) => {
     if (!doctorId || !clinicId) return;
     try {
       setLoading(true);
-      const data = await fetchDashboardData(doctorId, clinicId);
+      const data = await fetchTodayDashboardData(doctorId, clinicId);
       setDashboardData(data);
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -41,7 +42,10 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
       ...prev,
       todayPatients: prev.todayPatients.map(p =>
         p.appointmentId === appointmentId ? { ...p, status: newStatus } : p
-      )
+      ),
+      activeAppointments: prev.activeAppointments.map(p =>
+        p.appointmentId === appointmentId ? { ...p, status: newStatus } : p
+      ),
     }));
   };
 
@@ -49,8 +53,8 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
     console.log('Selected patient:', patient);
   };
 
-  const todayTotal    = dashboardData?.todayPatients?.length         || 0;
-  const completed     = dashboardData?.completedAppointments?.length || 0;
+  const todayTotal    = dashboardData?.todayPatients?.length          || 0;
+  const completed     = dashboardData?.completedAppointments?.length  || 0;
   const completionPct = todayTotal > 0 ? Math.round((completed / todayTotal) * 100) : 0;
 
   const hour     = currentTime.getHours();
@@ -108,7 +112,6 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
               LIVE
             </div>
 
-            {/* Change Password — sits before Sign Out */}
             <button
               className="header-logout-btn"
               onClick={() => setShowChangePassword(true)}
@@ -151,16 +154,19 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
           <>
             <DashboardStats data={dashboardData} />
             <PatientList
-              patients={dashboardData?.allAppointments              || []}
-              todayPatients={dashboardData?.todayPatients           || []}
-              activePatients={dashboardData?.activeAppointments     || []}
-              completedPatients={dashboardData?.completedAppointments || []}
+              todayPatients={dashboardData?.todayPatients              || []}
+              activePatients={dashboardData?.activeAppointments        || []}
+              completedPatients={dashboardData?.completedAppointments  || []}
               onPatientSelect={handlePatientSelect}
               onRefreshAppointments={() => loadDashboard(doctorId, clinicId)}
               updatePatientStatus={updatePatientStatus}
               doctorId={doctorId}
               clinicId={clinicId}
               doctorsInfo={dashboardData?.doctor}
+              // ✅ Pass paginated All-tab fetcher down
+              fetchAllAppointments={(page, search) =>
+                fetchAllAppointments(doctorId, clinicId, page, search)
+              }
             />
           </>
         )}

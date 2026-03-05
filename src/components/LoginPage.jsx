@@ -102,7 +102,10 @@ const LoginPage = () => {
                 stroke="white" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </div>
-          <h1 className="login-brand-name">AssistIQ</h1>
+         {/* After — styled with two-tone text */}
+        <h1 className="login-brand-name">
+          Assist<span className="brand-highlight">IQ</span>Clinic
+        </h1>
           <p className="login-brand-sub">Smart Clinic Management</p>
         </div>
 
