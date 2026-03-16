@@ -517,15 +517,24 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
     }
   };
 
+  const PRESCRIPTION_FIELDS = new Set([
+    'chiefComplaint', 'diagnosis', 'symptoms',
+    'dietaryAdvice', 'lifestyleAdvice', 'generalAdvice', 'warningAdvice',
+    'examinationFindings',
+  ]);
+
   const handleInputChange = (patientId, field, value) => {
     setPatientData(prev => ({
       ...prev,
       [patientId]: {
         ...prev[patientId],
-        [field]: value
+        [field]: value,
+        // ✅ auto-check WhatsApp if doctor fills any prescription-related field
+        ...(PRESCRIPTION_FIELDS.has(field) && value?.trim?.()
+          ? { sendPrescriptionToPatient: true }
+          : {}),
       }
     }));
-    
   };
 
   const handlePrescriptionChange = (patientId, index, field, value) => {
@@ -539,7 +548,9 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
         ...prev,
         [patientId]: {
           ...patientInfo,
-          prescriptions: updatedPrescriptions
+          prescriptions: updatedPrescriptions,
+          // ✅ auto-check WhatsApp when any medicine field has content
+          ...(value?.trim?.() ? { sendPrescriptionToPatient: true } : {}),
         }
       };
     });
@@ -619,7 +630,8 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
                   uploadDate: new Date().toISOString(),
                   url: e.target.result
                 }
-              ]
+              ],
+              sendPrescriptionToPatient: true, // ✅ auto-check when report uploaded
             }
           };
         });
@@ -634,12 +646,17 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
   };
   const handleRemoveReport = async (patientId, reportId) => {
     try {
-      // Call backend to delete report
-      await apiFetch(`/dashboard/reports/${reportId}`, {
-        method: 'DELETE'
-      });
+      // Local-only reports have a numeric timestamp as ID (from Date.now())
+      // They haven't been saved to DB yet, so skip the API call
+      const isLocalOnly = typeof reportId === 'number' && reportId > 1000000000000;
 
-      // Update local state
+      if (!isLocalOnly) {
+        await apiFetch(`/dashboard/reports/${reportId}`, {
+          method: 'DELETE'
+        });
+      }
+
+      // Always update local state
       setPatientData(prev => {
         const patientInfo = prev[patientId] || {};
         const reports = (patientInfo.reports || []).filter(r => r.id !== reportId);
@@ -675,7 +692,9 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
         ...prev,
         [patientId]: {
           ...patientInfo,
-          selectedTests: updatedTests
+          selectedTests: updatedTests,
+          // ✅ auto-check when a test is selected (not when deselected)
+          ...(!isSelected ? { sendPrescriptionToPatient: true } : {}),
         }
       };
     });
@@ -1103,6 +1122,7 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
                     <PatientHistoryPanel
                       patientId={patient.patientId}
                       currentAppointmentId={patient.appointmentId}
+                       doctorId={doctorId}   
                     />
 
                     {/* ── Action buttons row at top of expanded panel ── */}
@@ -1140,6 +1160,7 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
                               [patient.appointmentId]: {
                                 ...prev[patient.appointmentId],
                                 ...templateData,
+                                sendPrescriptionToPatient: true, // ✅ auto-check on template apply
                               }
                             }));
                           }}
@@ -1500,7 +1521,9 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
                      {!isConsultationLocked && (() => {
                         const hasPrescription = (data.prescriptions || []).some(p => p.medicineName?.trim());
                         const hasCanvasNote   = !!data.canvasNote?.imageDataUrl;
-                        const hasContent      = hasPrescription || hasCanvasNote;
+                        const hasReports      = (data.reports || []).length > 0;
+                        const hasTests        = (data.selectedTests || []).length > 0;
+                        const hasContent      = hasPrescription || hasCanvasNote || hasReports || hasTests;
                         const currentLang     = data.prescriptionLanguage || 'en';
                         return (
                           <div className="send-prescription-section">
@@ -1780,6 +1803,7 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
                   pdfDataUrl,
                   createdAt: new Date().toISOString(),
                 },
+                sendPrescriptionToPatient: true, // ✅ auto-check when canvas note saved
               }
             }));
           }}

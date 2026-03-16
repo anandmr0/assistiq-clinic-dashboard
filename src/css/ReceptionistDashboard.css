@@ -61,7 +61,6 @@
   gap: 14px;
 }
 
-/* Role pill */
 .recep-role-badge {
   display: flex;
   align-items: center;
@@ -178,10 +177,10 @@
   letter-spacing: -0.5px;
 }
 
-.recep-stat-num--waiting   { color: #fbbf24; }
-.recep-stat-num--arrived   { color: #6ee7b7; }
-.recep-stat-num--done      { color: #a7f3d0; }
-.recep-stat-num--noshow    { color: #fca5a5; }
+.recep-stat-num--waiting { color: #fbbf24; }
+.recep-stat-num--arrived { color: #6ee7b7; }
+.recep-stat-num--done    { color: #a7f3d0; }
+.recep-stat-num--noshow  { color: #fca5a5; }
 
 .recep-stat-lbl {
   font-size: 0.6875rem;
@@ -273,6 +272,11 @@
 .recep-walkin-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 5px 16px rgba(29,78,216,0.36);
+}
+
+.recep-walkin-btn--sm {
+  padding: 7px 14px;
+  font-size: 0.8125rem;
 }
 
 .recep-refresh-btn {
@@ -396,7 +400,6 @@
   border-color: #e2e8f0;
 }
 
-/* Token number */
 .recep-token {
   display: flex;
   flex-direction: column;
@@ -427,7 +430,6 @@
   margin-top: 2px;
 }
 
-/* Avatar */
 .recep-avatar {
   width: 44px;
   height: 44px;
@@ -441,7 +443,6 @@
   color: #fff;
 }
 
-/* Body */
 .recep-card-body {
   flex: 1;
   min-width: 0;
@@ -489,7 +490,6 @@
   font-weight: 600;
 }
 
-/* Actions */
 .recep-actions {
   display: flex;
   gap: 8px;
@@ -534,6 +534,17 @@
   border-color: #f87171;
 }
 
+.recep-action-btn--outline {
+  background: #fff;
+  color: #1d4ed8;
+  border: 1.5px solid #bfdbfe;
+}
+
+.recep-action-btn--outline:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
 .recep-action-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -566,17 +577,8 @@
   margin-bottom: 8px;
 }
 
-.recep-empty p {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #374151;
-  margin: 0;
-}
-
-.recep-empty small {
-  font-size: 0.875rem;
-  color: #9ca3af;
-}
+.recep-empty p     { font-size: 1rem;    font-weight: 700; color: #374151; margin: 0; }
+.recep-empty small { font-size: 0.875rem; color: #9ca3af; }
 
 /* ── Logout modal ── */
 .recep-modal-overlay {
@@ -608,25 +610,10 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.recep-modal h3 {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 10px;
-}
+.recep-modal h3 { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 10px; }
+.recep-modal p  { font-size: 0.9rem; color: #64748b; line-height: 1.6; margin: 0 0 24px; }
 
-.recep-modal p {
-  font-size: 0.9rem;
-  color: #64748b;
-  line-height: 1.6;
-  margin: 0 0 24px;
-}
-
-.recep-modal-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
+.recep-modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
 .recep-modal-cancel {
   padding: 9px 20px;
@@ -640,7 +627,6 @@
   font-family: inherit;
   transition: background 0.15s;
 }
-
 .recep-modal-cancel:hover { background: #f8fafc; }
 
 .recep-modal-confirm {
@@ -655,14 +641,527 @@
   font-family: inherit;
   transition: background 0.15s;
 }
-
 .recep-modal-confirm:hover { background: #dc2626; }
+
+/* ════════════════════════════════════════════════
+   PATIENT DRAWER
+   ════════════════════════════════════════════════ */
+
+.recep-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(3px);
+  z-index: 200;
+  animation: recepFadeIn 0.2s ease;
+}
+
+.recep-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 480px;
+  max-width: 100vw;
+  height: 100vh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+  animation: recepDrawerIn 0.28s cubic-bezier(0.16,1,0.3,1);
+  overflow: hidden;
+}
+
+@keyframes recepDrawerIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* Drawer header */
+.recep-drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 60%, #0891b2 100%);
+  flex-shrink: 0;
+}
+
+.recep-drawer-avatar {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.recep-drawer-meta { flex: 1; min-width: 0; }
+
+.recep-drawer-name {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recep-drawer-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.7);
+  margin-top: 3px;
+}
+
+.recep-drawer-token {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 20px;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.recep-drawer-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.recep-drawer-close:hover { background: rgba(255,255,255,0.28); }
+
+/* Drawer tabs */
+.recep-drawer-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 0 12px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  background: #fff;
+}
+
+.recep-drawer-tab {
+  padding: 11px 14px;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: #64748b;
+  background: transparent;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+
+.recep-drawer-tab:hover { color: #1d4ed8; }
+
+.recep-drawer-tab--active {
+  color: #1d4ed8;
+  border-bottom-color: #1d4ed8;
+}
+
+/* Drawer scrollable body */
+.recep-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.recep-drawer-section {
+  padding: 18px 20px;
+}
+
+.recep-drawer-loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
+
+.recep-drawer-empty {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  padding: 32px 0;
+}
+
+/* ── INFO tab ── */
+.recep-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.recep-info-item {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.recep-info-item--full { grid-column: 1 / -1; }
+
+.recep-info-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.recep-info-val {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.recep-info-shortcuts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── HISTORY tab ── */
+.recep-history-card {
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #f1f5f9;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.recep-history-date {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.recep-history-doc {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 3px;
+}
+
+.recep-history-note {
+  font-size: 0.8125rem;
+  color: #475569;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+/* ── PRESCRIPTIONS tab ── */
+.recep-readonly-notice {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 14px;
+}
+
+.recep-rx-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.recep-rx-meta { margin-bottom: 10px; }
+
+.recep-rx-date {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.recep-rx-doc {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.recep-rx-drugs {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.recep-drug-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  background: #fff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  border: 1px solid #f1f5f9;
+}
+
+.recep-drug-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.recep-drug-dose {
+  font-size: 0.75rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.recep-rx-notes {
+  font-size: 0.8rem;
+  color: #475569;
+  background: #fff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  border: 1px solid #f1f5f9;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.recep-rx-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.recep-rx-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1.5px solid transparent;
+  transition: opacity 0.15s, transform 0.12s;
+}
+
+.recep-rx-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+.recep-rx-btn--print {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.recep-rx-btn--pdf {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border-color: #ddd6fe;
+}
+
+.recep-rx-btn--wa {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.recep-rx-btn--sms {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #fed7aa;
+}
+
+/* ── REPORTS tab ── */
+.recep-section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.recep-file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #f1f5f9;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.recep-file-icon { font-size: 1.125rem; flex-shrink: 0; }
+
+.recep-file-name {
+  flex: 1;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recep-file-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+}
+
+.recep-file-tag--existing { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.recep-file-tag--new      { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+.recep-upload-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 22px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+  margin-top: 4px;
+}
+
+.recep-upload-drop:hover {
+  border-color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.recep-upload-drop span {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.recep-upload-drop small {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.recep-upload-icon {
+  font-size: 1.75rem;
+  margin-bottom: 4px;
+}
+
+/* ── SEND tab ── */
+.recep-send-notice {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 9px;
+  padding: 10px 14px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #14532d;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.recep-channel-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.recep-channel-btn {
+  flex: 1;
+  min-width: 90px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1.5px solid #e2e8f0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: #64748b;
+  background: #fff;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.recep-channel-btn:hover { border-color: #1d4ed8; color: #1d4ed8; background: #eff6ff; }
+
+.recep-channel-btn--active {
+  background: linear-gradient(135deg, #1d4ed8, #0891b2);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(29,78,216,0.25);
+}
+
+.recep-send-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #0f172a;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+}
+
+.recep-send-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #1d4ed8;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.recep-send-recipient {
+  background: #f8fafc;
+  border-radius: 9px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 14px 0 12px;
+  border: 1px solid #f1f5f9;
+}
+
+.recep-send-recipient strong { color: #0f172a; }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .recep-header-inner { padding: 14px 16px; flex-wrap: wrap; }
   .recep-date-badge   { display: none; }
-  .recep-stats-strip  { padding: 10px 16px; gap: 0; overflow-x: auto; }
+  .recep-stats-strip  { padding: 10px 16px; overflow-x: auto; }
   .recep-stat         { padding: 0 16px; min-width: 64px; }
   .recep-main         { padding: 16px; }
   .recep-toolbar      { gap: 8px; }
@@ -670,10 +1169,14 @@
   .recep-actions      { width: 100%; justify-content: flex-end; }
   .recep-controls     { flex-direction: column; align-items: stretch; }
   .recep-filter-tabs  { align-self: flex-start; }
+  .recep-drawer       { width: 100vw; }
+  .recep-info-grid    { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
-  .recep-name  { font-size: 1rem; }
-  .recep-token { width: 44px; min-width: 44px; height: 44px; }
-  .recep-card  { padding: 12px; }
+  .recep-name         { font-size: 1rem; }
+  .recep-token        { width: 44px; min-width: 44px; height: 44px; }
+  .recep-card         { padding: 12px; }
+  .recep-drawer-tabs  { padding: 0 4px; }
+  .recep-drawer-tab   { padding: 10px 10px; font-size: 0.75rem; }
 }

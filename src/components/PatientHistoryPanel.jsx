@@ -4,7 +4,7 @@ import '../css/PatientHistoryPanel.css';
 
 const LIMIT = 5;
 
-const PatientHistoryPanel = ({ patientId, currentAppointmentId }) => {
+const PatientHistoryPanel = ({ patientId, currentAppointmentId,doctorId  }) => {
   const [history, setHistory]   = useState([]);
   const [loading, setLoading]   = useState(true);
   const [expanded, setExpanded] = useState(null);
@@ -12,13 +12,14 @@ const PatientHistoryPanel = ({ patientId, currentAppointmentId }) => {
   const [showAll, setShowAll]   = useState(false);
 
   useEffect(() => {
-    if (!patientId) return;
+    if (!patientId || !doctorId) return;
     setLoading(true);
     setError(false);
     setShowAll(false);
     setExpanded(null);
-    apiFetch(`/dashboard/patient/${patientId}/history`)
+     apiFetch(`/dashboard/patient/${patientId}/history?doctorId=${doctorId}`)  
       .then(data => {
+        console.log("Patient history data:", data);
         const past = (data || []).filter(a => a.id !== currentAppointmentId);
         setHistory(past);
       })
