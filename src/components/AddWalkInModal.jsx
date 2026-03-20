@@ -1,177 +1,174 @@
-import React, { useState,useEffect  } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../css/AddWalkInModal.css';
 import { apiFetch } from "../services/apiConfig";
-const AddWalkInModal = ({ loading, initData = {}, onClose, onSuccess }) => {
+
+/**
+ * AddWalkInModal
+ *
+ * Original props (unchanged):
+ *   loading, initData, onClose, onSuccess
+ *
+ * New props added:
+ *   role           – 'DOCTOR' | 'RECEPTIONIST'
+ *                    DOCTOR   → doctor dropdown is hidden, locked to their own name
+ *                    RECEPTIONIST → full dropdown of all clinic doctors (original behaviour)
+ *   lockedDoctorId – number|null  (pass doctorId from auth when role=DOCTOR)
+ */
+const AddWalkInModal = ({
+  loading,
+  initData = {},
+  onClose,
+  onSuccess,
+  role           = 'RECEPTIONIST',
+  lockedDoctorId = null,
+}) => {
   const [toast, setToast] = useState(null);
+
   const showToast = (type, title, message, duration = 3500) => {
     setToast({ type, title, message });
     setTimeout(() => setToast(null), duration);
   };
-  const [formData, setFormData] = useState({
-    doctorId: "",
-  appointmentDate: "",
-  slot: "",
-  patientName: "",
-  phoneNumber: "",
-  age: "",
-  gender: "Male",
-  reason: ""
-  
-  });
-  const [submitting, setSubmitting] = useState(false);
 
+  const [formData, setFormData] = useState({
+    doctorId:        '',
+    appointmentDate: '',
+    slot:            '',
+    patientName:     '',
+    phoneNumber:     '',
+    age:             '',
+    gender:          'Male',
+    reason:          '',
+  });
+
+  const [submitting, setSubmitting] = useState(false);
+  const [errors,     setErrors]     = useState({});
+
+  const doctors      = initData?.doctors || [];
+  const isDoctor     = role === 'DOCTOR';
+
+  /* ── Seed date from initData ── */
   useEffect(() => {
     if (initData?.date) {
-        setFormData(prev => ({ ...prev, appointmentDate: initData.date }));
-      }
-    }, [initData]);
-    const doctors = initData?.doctors || [];
+      setFormData(prev => ({ ...prev, appointmentDate: initData.date }));
+    }
+  }, [initData]);
+
+  /* ── Auto-lock doctor when role=DOCTOR ── */
+  useEffect(() => {
+    if (isDoctor && lockedDoctorId) {
+      setFormData(prev => {
+        const doc = doctors.find(d => String(d.doctorId) === String(lockedDoctorId));
+        return {
+          ...prev,
+          doctorId:   String(lockedDoctorId),
+          doctorName: doc?.doctorName || '',
+        };
+      });
+    }
+  }, [isDoctor, lockedDoctorId, doctors.length]); // eslint-disable-line
+
+  /* ── Auto-select slot if only one available ── */
+  useEffect(() => {
+    const doc = doctors.find(d => String(d.doctorId) === String(formData.doctorId));
+    if (!doc) return;
+    const hasMorning = doc.morningAvailable;
+    const hasEvening = doc.eveningAvailable;
+    if (hasMorning && !hasEvening) setFormData(prev => ({ ...prev, slot: 'MORNING' }));
+    if (hasEvening && !hasMorning) setFormData(prev => ({ ...prev, slot: 'EVENING' }));
+  }, [formData.doctorId]); // eslint-disable-line
+
   const selectedDoctor = doctors.find(
     d => String(d.doctorId) === String(formData.doctorId)
   );
-  const [errors, setErrors] = useState({});
+
+  /* ── Locked doctor display name ── */
+  const lockedDoctorName = doctors.find(
+    d => String(d.doctorId) === String(lockedDoctorId)
+  )?.doctorName || 'You';
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-    
-    // Auto-fill doctor name when doctor is selected
-    if (field === 'doctorId' && doctors.length > 0) {
-      const selectedDoctor = doctors.find(d => String(d.doctorId) === String(value));
-      if (selectedDoctor) {
-        setFormData(prev => ({ ...prev, doctorName: selectedDoctor.doctorName }));
-      }
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
+    if (field === 'doctorId') {
+      const doc = doctors.find(d => String(d.doctorId) === String(value));
+      if (doc) setFormData(prev => ({ ...prev, doctorId: value, doctorName: doc.doctorName }));
     }
   };
 
-  const validate = () => {
-    const newErrors = {};
-    
-    if (!formData.doctorId) {
-      newErrors.doctorId = 'Please select a doctor';
-    }
-    
-    if (!formData.patientName.trim()) {
-      newErrors.patientName = 'Patient name is required';
-    }
-    
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Phone number is required';
-    } else if (!/^\d{10}$/.test(formData.phoneNumber.replace(/\D/g, ''))) {
-      newErrors.phoneNumber = 'Invalid phone number';
-    }
-    
-    if (!formData.age || formData.age < 1 || formData.age > 150) {
-      newErrors.age = 'Valid age is required';
-    }
-    
-    if (formData.appointmentDate === 'custom' && !formData.customDate) {
-      newErrors.customDate = 'Please select a date';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-  
-    if (!formData.doctorId || !formData.slot || !formData.patientName) {
-      showToast("error", "Required Fields Missing", "Please fill Doctor, Slot and Patient Name.");
-      return;
-    }
-    const payload = {
-        doctorId: Number(formData.doctorId),
-        appointmentDate:
-        formData.appointmentDate === "custom"
-          ? formData.customDate
-          : getNormalizedDate(formData.appointmentDate),
-        slot: formData.slot.toUpperCase(),   // 🔥 IMPORTANT
-        patientName: formData.patientName,
-        phoneNumber: formData.phoneNumber,
-        age: Number(formData.age),
-        gender: formData.gender,
-        reason: formData.reason
-      };
-    try {
-      setSubmitting(true);
-      const res = await apiFetch("/appointments/walkin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-  
-     // if (!res.ok) throw new Error();
-  
-      showToast("success", "Walk-in Added", "Patient registered successfully.");
-      setTimeout(() => { onSuccess(); onClose(); }, 1600);
-    } catch {
-      showToast("error", "Registration Failed", "Failed to add walk-in patient. Please try again.");
-    }
-    finally {
-      setSubmitting(false); // 🔥 STOP LOADING
-    }
-  };
-  
-  
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
-    
-//     if (validate()) {
-//       // Prepare data for submission
-//       const submissionData = {
-//         ...formData,
-//         appointmentDate: formData.appointmentDate === 'custom' 
-//           ? formData.customDate 
-//           : formData.appointmentDate
-//       };
-      
-//       onSubmit(submissionData);
-//     }
-//   };
-
-const getAppointmentDateOptions = () => {
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dayAfter = new Date(today);
-    dayAfter.setDate(dayAfter.getDate() + 2);
-    
+  /* ── Date helpers ── */
+  const getAppointmentDateOptions = () => {
+    const today    = new Date();
+    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+    const dayAfter = new Date(today); dayAfter.setDate(dayAfter.getDate() + 2);
     return [
-      { value: 'today', label: 'Today' },
+      { value: 'today',    label: 'Today' },
       { value: 'tomorrow', label: 'Tomorrow' },
       { value: dayAfter.toISOString().split('T')[0], label: 'Day After Tomorrow' },
-      { value: 'custom', label: 'Custom Date' }
+      { value: 'custom',   label: 'Custom Date' },
     ];
   };
- // Normalize date for backend
- const getNormalizedDate = (value) => {
-  const today = new Date();
-  switch (value) {
-    case "today":
-      return today.toISOString().split("T")[0];
-    case "tomorrow":
-      const tmr = new Date(today);
-      tmr.setDate(today.getDate() + 1);
-      return tmr.toISOString().split("T")[0];
-    default:
-      return value; // day after or custom
-  }
-};
-const formatTime = (timeStr) => {
-  if (!timeStr) return "";
-  const [hours, minutes] = timeStr.split(':');
-  const h = parseInt(hours);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const hour12 = h % 12 || 12;
-  return `${hour12}:${minutes} ${ampm}`;
-};
+
+  const getNormalizedDate = (value) => {
+    const today = new Date();
+    if (value === 'today')    return today.toISOString().split('T')[0];
+    if (value === 'tomorrow') {
+      const tmr = new Date(today); tmr.setDate(today.getDate() + 1);
+      return tmr.toISOString().split('T')[0];
+    }
+    return value;
+  };
+
+  const formatTime = (timeStr) => {
+    if (!timeStr) return '';
+    const [hours, minutes] = timeStr.split(':');
+    const h    = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12  = h % 12 || 12;
+    return `${h12}:${minutes} ${ampm}`;
+  };
+
+  /* ── Submit ── */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.doctorId || !formData.slot || !formData.patientName) {
+      showToast('error', 'Required Fields Missing', 'Please fill Doctor, Slot and Patient Name.');
+      return;
+    }
+
+    const payload = {
+      doctorId:        Number(formData.doctorId),
+      appointmentDate: formData.appointmentDate === 'custom'
+        ? formData.customDate
+        : getNormalizedDate(formData.appointmentDate),
+      slot:            formData.slot.toUpperCase(),
+      patientName:     formData.patientName,
+      phoneNumber:     formData.phoneNumber,
+      age:             Number(formData.age),
+      gender:          formData.gender,
+      reason:          formData.reason,
+    };
+
+    try {
+      setSubmitting(true);
+      await apiFetch('/appointments/walkin', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      showToast('success', 'Walk-in Added', 'Patient registered successfully.');
+      setTimeout(() => { onSuccess(); onClose(); }, 1600);
+    } catch {
+      showToast('error', 'Registration Failed', 'Failed to add walk-in patient. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+
+        {/* ── Header ── */}
         <div className="modal-header">
           <h2>Add Walk-in Patient</h2>
           <button className="modal-close" onClick={onClose}>
@@ -182,34 +179,53 @@ const formatTime = (timeStr) => {
         </div>
 
         <form onSubmit={handleSubmit} className="walkin-form">
-          {/* Doctor Selection */}
+
+          {/* ── DOCTOR ── */}
           <div className="form-group">
             <label className="form-label">
               Doctor *
+              {isDoctor && (
+                <span style={{ fontSize: 11, background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: 20, fontWeight: 700, marginLeft: 6 }}>
+                  Your patients only ✓
+                </span>
+              )}
               <svg viewBox="0 0 24 24" fill="none" className="label-icon">
                 <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2"/>
               </svg>
             </label>
-            {/* <select
-              className={`form-select ${errors.doctorId ? 'error' : ''}`}
-              value={formData.doctorId}
-              onChange={(e) => handleChange('doctorId', e.target.value)}
-            > */}
-             <select  className={`form-select ${errors.doctorId ? 'error' : ''}`}
-            value={formData.doctorId}
-            onChange={e => handleChange("doctorId", e.target.value)}
-            >
-              <option value="">Select Doctor</option>
-              {doctors.map(doc => (
-            <option key={doc.doctorId} value={doc.doctorId}>
-              {doc.doctorName}
-            </option>
-          ))}
-            </select>
+
+            {isDoctor ? (
+              /* DOCTOR — locked green box, no dropdown */
+              <div
+                className="form-input"
+                style={{ background: '#f0fdf4', borderColor: '#86efac', color: '#166534', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, cursor: 'default' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" width="15" height="15">
+                  <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M4 20c0-2.2 3.6-4 8-4s8 1.8 8 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                {lockedDoctorName}
+                <span style={{ marginLeft: 'auto', fontSize: 11, opacity: .65, fontWeight: 500 }}>Auto-selected</span>
+              </div>
+            ) : (
+              /* RECEPTIONIST — full dropdown */
+              <select
+                className={`form-select ${errors.doctorId ? 'error' : ''}`}
+                value={formData.doctorId}
+                onChange={e => handleChange('doctorId', e.target.value)}
+              >
+                <option value="">Select Doctor</option>
+                {doctors.map(doc => (
+                  <option key={doc.doctorId} value={doc.doctorId}>
+                    {doc.doctorName}
+                  </option>
+                ))}
+              </select>
+            )}
             {errors.doctorId && <span className="error-text">{errors.doctorId}</span>}
           </div>
 
-          {/* Appointment Date */}
+          {/* ── APPOINTMENT DATE ── */}
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">
@@ -222,12 +238,10 @@ const formatTime = (timeStr) => {
               <select
                 className="form-select"
                 value={formData.appointmentDate}
-                onChange={(e) => handleChange('appointmentDate', e.target.value)}
+                onChange={e => handleChange('appointmentDate', e.target.value)}
               >
-                {getAppointmentDateOptions().map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
+                {getAppointmentDateOptions().map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
             </div>
@@ -239,7 +253,7 @@ const formatTime = (timeStr) => {
                   type="date"
                   className={`form-input ${errors.customDate ? 'error' : ''}`}
                   value={formData.customDate}
-                  onChange={(e) => handleChange('customDate', e.target.value)}
+                  onChange={e => handleChange('customDate', e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
                 />
                 {errors.customDate && <span className="error-text">{errors.customDate}</span>}
@@ -247,7 +261,7 @@ const formatTime = (timeStr) => {
             )}
           </div>
 
-          {/* Slot Selection */}
+          {/* ── SLOT ── */}
           <div className="form-group">
             <label className="form-label">
               Slot *
@@ -257,43 +271,58 @@ const formatTime = (timeStr) => {
               </svg>
             </label>
             <div className="radio-group">
-            <label className={`radio-option ${formData.slot === "MORNING" ? "active" : ""} ${!selectedDoctor?.morningAvailable ? "disabled" : ""}`}>
+
+              {/* Morning */}
+              <label className={`radio-option ${formData.slot === 'MORNING' ? 'active' : ''} ${!selectedDoctor?.morningAvailable ? 'disabled' : ''}`}>
                 <input
-                type="radio"
-                value="MORNING"
-                disabled={!selectedDoctor?.morningAvailable}
-                checked={formData.slot === "MORNING"}
-                onChange={e => handleChange("slot", e.target.value)}
+                  type="radio"
+                  value="MORNING"
+                  disabled={!selectedDoctor?.morningAvailable}
+                  checked={formData.slot === 'MORNING'}
+                  onChange={e => handleChange('slot', e.target.value)}
                 />
-                🌅 Morning  
-                {selectedDoctor?.morningAvailable && (
-                <span className="radio-time">
-                    {formatTime(selectedDoctor.morningStart)} - {formatTime(selectedDoctor.morningEnd)}
-                </span>
+                <span className="radio-icon">🌅</span>
+                <span className="radio-label">Morning</span>
+                {selectedDoctor?.morningAvailable && selectedDoctor?.morningStart && (
+                  <span className="radio-time">
+                    {formatTime(selectedDoctor.morningStart)} – {formatTime(selectedDoctor.morningEnd)}
+                  </span>
                 )}
-            </label>
-              <label className={`radio-option ${formData.slot === "EVENING" ? "active" : ""} ${!selectedDoctor?.eveningAvailable ? "disabled" : ""}`}>
+                {!selectedDoctor?.morningAvailable && selectedDoctor && (
+                  <span style={{ marginLeft: 'auto', fontSize: 10, background: '#f1f5f9', color: '#9ca3af', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>
+                    Not available
+                  </span>
+                )}
+              </label>
+
+              {/* Evening */}
+              <label className={`radio-option ${formData.slot === 'EVENING' ? 'active' : ''} ${!selectedDoctor?.eveningAvailable ? 'disabled' : ''}`}>
                 <input
-                type="radio"
-                value="EVENING"
-                disabled={!selectedDoctor?.eveningAvailable}
-                checked={formData.slot === "EVENING"}
-                onChange={e => handleChange("slot", e.target.value)}
+                  type="radio"
+                  value="EVENING"
+                  disabled={!selectedDoctor?.eveningAvailable}
+                  checked={formData.slot === 'EVENING'}
+                  onChange={e => handleChange('slot', e.target.value)}
                 />
-                🌙 Evening  
-                {selectedDoctor?.eveningAvailable && (
-                <span className="radio-time">
-                    {formatTime(selectedDoctor.eveningStart)} - {formatTime(selectedDoctor.eveningEnd)}
-                </span>
+                <span className="radio-icon">🌙</span>
+                <span className="radio-label">Evening</span>
+                {selectedDoctor?.eveningAvailable && selectedDoctor?.eveningStart && (
+                  <span className="radio-time">
+                    {formatTime(selectedDoctor.eveningStart)} – {formatTime(selectedDoctor.eveningEnd)}
+                  </span>
                 )}
-            </label>
+                {!selectedDoctor?.eveningAvailable && selectedDoctor && (
+                  <span style={{ marginLeft: 'auto', fontSize: 10, background: '#f1f5f9', color: '#9ca3af', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>
+                    Not available
+                  </span>
+                )}
+              </label>
+
             </div>
           </div>
 
-          {/* Patient Details */}
-          <div className="form-divider">
-            <span>Patient Details</span>
-          </div>
+          {/* ── PATIENT DETAILS ── */}
+          <div className="form-divider"><span>Patient Details</span></div>
 
           <div className="form-group">
             <label className="form-label">
@@ -337,8 +366,7 @@ const formatTime = (timeStr) => {
                 type="number"
                 className={`form-input ${errors.age ? 'error' : ''}`}
                 placeholder="Age"
-                min="1"
-                max="150"
+                min="1" max="150"
                 value={formData.age}
                 onChange={e => setFormData({ ...formData, age: e.target.value })}
               />
@@ -350,7 +378,7 @@ const formatTime = (timeStr) => {
               <select
                 className="form-select"
                 value={formData.gender}
-                onChange={(e) => handleChange('gender', e.target.value)}
+                onChange={e => handleChange('gender', e.target.value)}
               >
                 <option value="male">Male</option>
                 <option value="female">Female</option>
@@ -375,28 +403,23 @@ const formatTime = (timeStr) => {
             />
           </div>
 
-          {/* Submit Buttons */}
+          {/* ── Actions ── */}
           <div className="modal-actions">
             <button type="button" className="btn-secondary" onClick={onClose}>
               Cancel
             </button>
             <button
-                type="submit"
-                className="btn-primary"
-                disabled={submitting}
-                style={{
-                  opacity: submitting ? 0.7 : 1,
-                  cursor: submitting ? "not-allowed" : "pointer",
-                }}
-              >
-             {submitting ? (
-                <>
-                  <span className="spinner" /> Adding...
-                </>
+              type="submit"
+              className="btn-primary"
+              disabled={submitting}
+              style={{ opacity: submitting ? 0.7 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }}
+            >
+              {submitting ? (
+                <><span className="spinner" /> Adding...</>
               ) : (
                 <>
                   <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" />
+                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2"/>
                   </svg>
                   Add Patient
                 </>
@@ -406,39 +429,32 @@ const formatTime = (timeStr) => {
         </form>
       </div>
 
-      {/* Toast — top-center, above modal overlay */}
+      {/* ── Toast ── */}
       {toast && (
         <div style={{
-          position:'fixed', top:24, left:'50%', transform:'translateX(-50%)',
-          zIndex:999999,
-          display:'flex', alignItems:'center', gap:12,
-          background:'#fff',
-          borderLeft:`4px solid ${toast.type==='success'?'#10b981':'#ef4444'}`,
-          borderRadius:12, padding:'14px 20px',
-          minWidth:300, maxWidth:440,
-          boxShadow:'0 8px 32px rgba(0,0,0,0.18)',
-          fontFamily:"'Segoe UI',Arial,sans-serif",
-          animation:'toastDrop 0.35s cubic-bezier(0.34,1.56,0.64,1)',
-          whiteSpace:'nowrap',
+          position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 999999, display: 'flex', alignItems: 'center', gap: 12,
+          background: '#fff',
+          borderLeft: `4px solid ${toast.type === 'success' ? '#10b981' : '#ef4444'}`,
+          borderRadius: 12, padding: '14px 20px',
+          minWidth: 300, maxWidth: 440,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+          fontFamily: "'Segoe UI',Arial,sans-serif",
+          animation: 'toastDrop 0.35s cubic-bezier(0.34,1.56,0.64,1)',
         }}>
           <div style={{
-            width:36, height:36, borderRadius:'50%', flexShrink:0,
-            background: toast.type==='success'?'#f0fdf4':'#fef2f2',
-            display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
+            width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+            background: toast.type === 'success' ? '#f0fdf4' : '#fef2f2',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
           }}>
-            {toast.type==='success' ? '✅' : '❌'}
+            {toast.type === 'success' ? '✅' : '❌'}
           </div>
-          <div style={{flex:1, minWidth:0, whiteSpace:'normal'}}>
-            <div style={{fontWeight:700, fontSize:13.5, color:'#0f172a', marginBottom:2}}>
-              {toast.title}
-            </div>
-            <div style={{fontSize:12.5, color:'#64748b', lineHeight:1.4}}>
-              {toast.message}
-            </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a', marginBottom: 2 }}>{toast.title}</div>
+            <div style={{ fontSize: 12.5, color: '#64748b', lineHeight: 1.4 }}>{toast.message}</div>
           </div>
-          <button onClick={()=>setToast(null)}
-            style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8',
-              fontSize:20, padding:'0 0 0 10px', lineHeight:1, flexShrink:0}}>
+          <button onClick={() => setToast(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 20, padding: '0 0 0 10px' }}>
             ×
           </button>
           <style>{`
