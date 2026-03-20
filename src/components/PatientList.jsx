@@ -291,7 +291,7 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
  // Pagination state for Active/Completed tabs (frontend)
   const [patientCurrentPage, setPatientCurrentPage] = useState(1);
   const patientsPerPage = 10;
-
+ 
   // ── All tab — backend-paginated ──────────────────────────────
   const [allTabData,       setAllTabData]       = useState([]);
   const [allTabPage,       setAllTabPage]       = useState(0);   // 0-based (Spring)
@@ -1813,6 +1813,8 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
       {/* Walk-in Modal */}
       {showWalkInModal && (
         <AddWalkInModal
+          role="DOCTOR"
+          lockedDoctorId={doctorId}  
           loading={loadingWalkIn}
           initData={walkInInitData}
           onClose={() => setShowWalkInModal(false)}

@@ -1,0 +1,364 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   QuickSendPanel.css
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.qsp-overlay {
+  /* tokens */
+  --teal:        #0f766e;
+  --teal-mid:    #14b8a6;
+  --teal-lt:     #ccfbf1;
+  --green:       #16a34a;
+  --green-dk:    #15803d;
+  --green-lt:    #dcfce7;
+  --red:         #dc2626;
+  --red-lt:      #fef2f2;
+  --amber:       #d97706;
+  --amber-lt:    #fffbeb;
+  --amber-brd:   #fde68a;
+  --blue:        #2563eb;
+  --blue-lt:     #eff6ff;
+  --g50:         #f9fafb;
+  --g100:        #f3f4f6;
+  --g200:        #e5e7eb;
+  --g300:        #d1d5db;
+  --g400:        #9ca3af;
+  --g600:        #4b5563;
+  --g700:        #374151;
+  --g900:        #111827;
+  --font:        'Segoe UI', system-ui, -apple-system, sans-serif;
+  --ease:        0.14s ease;
+
+  /* layout — always centered */
+  position:        fixed;
+  inset:           0;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         20px 16px;
+  background:      rgba(0,0,0,0.54);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index:         9999;
+  touch-action:    none;
+  overscroll-behavior: none;
+  animation:       qFadeIn .17s ease;
+}
+
+@keyframes qFadeIn  { from { opacity:0 } to { opacity:1 } }
+@keyframes qSlideUp { from { opacity:0; transform:translateY(18px) scale(.97) } to { opacity:1; transform:none } }
+@keyframes qSpin    { to { transform:rotate(360deg) } }
+
+/* ── Panel ── */
+.qsp-panel {
+  background:          #fff;
+  border-radius:       18px;
+  box-shadow:          0 28px 72px rgba(0,0,0,.26), 0 6px 20px rgba(0,0,0,.10);
+  width:               480px;
+  max-width:           min(480px, calc(100vw - 28px));
+  max-height:          min(88vh, 760px);
+  overflow-y:          auto;
+  overflow-x:          hidden;
+  font-family:         var(--font);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  animation:           qSlideUp .24s cubic-bezier(.16,1,.3,1);
+  scrollbar-width:     thin;
+  scrollbar-color:     var(--g300) transparent;
+}
+.qsp-panel::-webkit-scrollbar       { width:4px }
+.qsp-panel::-webkit-scrollbar-track { background:transparent }
+.qsp-panel::-webkit-scrollbar-thumb { background:var(--g300); border-radius:4px }
+
+/* ── Header ── */
+.qsp-header {
+  background:    linear-gradient(135deg, var(--teal) 0%, var(--teal-mid) 100%);
+  padding:       18px 20px 16px;
+  display:       flex;
+  align-items:   center;
+  justify-content: space-between;
+  gap:           12px;
+  position:      sticky;
+  top:           0;
+  z-index:       10;
+}
+.qsp-hd-left { display:flex; align-items:center; gap:12px; }
+.qsp-hd-icon {
+  width:42px; height:42px;
+  background:rgba(255,255,255,.2);
+  border-radius:11px;
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; flex-shrink:0;
+}
+.qsp-title { font-size:15px; font-weight:700; color:#fff; margin:0 0 2px; letter-spacing:-.2px; }
+.qsp-sub   { font-size:11px; color:rgba(255,255,255,.82); margin:0; }
+.qsp-close {
+  background:rgba(255,255,255,.2); border:none; border-radius:8px;
+  color:#fff; width:30px; height:30px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; flex-shrink:0; transition:background var(--ease);
+}
+.qsp-close:hover { background:rgba(255,255,255,.32); }
+
+/* ── Body ── */
+.qsp-body {
+  padding:18px 18px 22px;
+  display:flex; flex-direction:column; gap:12px;
+}
+
+/* ── Form card ── */
+.qsp-form-card {
+  background:var(--g50);
+  border:1.5px solid var(--g200);
+  border-radius:14px;
+  padding:14px 16px;
+  display:flex; flex-direction:column; gap:12px;
+}
+
+.qsp-card-heading {
+  display:flex; align-items:center; gap:7px;
+  font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.55px; color:var(--g400); margin:0;
+}
+.qsp-card-heading svg { color:var(--teal); }
+
+.qsp-card-hint {
+  font-weight:400; font-size:10.5px; text-transform:none;
+  letter-spacing:0; margin-left:4px;
+}
+
+/* ── Fields ── */
+.qsp-field { display:flex; flex-direction:column; gap:5px; }
+
+.qsp-label {
+  font-size:12px; font-weight:600; color:var(--g700);
+  display:flex; align-items:center; gap:4px;
+}
+.qsp-req { color:var(--red); font-size:13px; line-height:1; }
+
+.qsp-input {
+  width:100%; box-sizing:border-box;
+  padding:11px 13px;
+  border:2px solid var(--g200); border-radius:10px;
+  font-size:14px; font-family:var(--font); color:var(--g900);
+  background:#fff; outline:none;
+  transition:border-color var(--ease), box-shadow var(--ease);
+}
+.qsp-input:focus         { border-color:var(--teal); box-shadow:0 0 0 3px rgba(15,118,110,.1); }
+.qsp-input--matched      { border-color:var(--green); background:#f0fdf4; }
+.qsp-input::placeholder  { color:var(--g400); }
+
+/* ── Phone row ── */
+.qsp-phone-row { display:flex; gap:8px; position:relative; }
+
+.qsp-phone-box {
+  flex:1; display:flex; align-items:center; gap:8px;
+  padding:0 11px;
+  border:2px solid var(--g200); border-radius:10px;
+  background:#fff; min-width:0;
+  transition:border-color var(--ease), box-shadow var(--ease), background var(--ease);
+}
+.qsp-phone-box:focus-within { border-color:var(--teal); box-shadow:0 0 0 3px rgba(15,118,110,.1); background:#fff; }
+.qsp-phone-box--matched     { border-color:var(--green); background:#f0fdf4; }
+.qsp-phone-box--open        { border-radius:10px 10px 0 0; border-bottom-color:var(--g200); }
+.qsp-phone-box svg          { color:var(--g400); flex-shrink:0; }
+
+.qsp-phone-input {
+  flex:1; border:none; outline:none; background:transparent;
+  font-size:14px; font-family:var(--font); color:var(--g900);
+  padding:11px 0; min-width:0;
+}
+.qsp-phone-input::placeholder { color:var(--g400); }
+
+/* ── Icon button ── */
+.qsp-icon-btn {
+  background:none; border:none; cursor:pointer; color:var(--g400);
+  padding:4px; border-radius:5px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  transition:color var(--ease), background var(--ease);
+}
+.qsp-icon-btn:hover { color:var(--red); background:var(--red-lt); }
+
+/* ── Contacts button ── */
+.qsp-contacts-btn {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:3px; padding:0 13px; min-height:46px;
+  background:var(--teal-lt); border:2px solid var(--teal);
+  border-radius:10px; color:var(--teal);
+  font-size:10.5px; font-weight:700; font-family:var(--font);
+  cursor:pointer; white-space:nowrap; flex-shrink:0;
+  transition:background var(--ease), color var(--ease);
+}
+.qsp-contacts-btn:hover:not(.qsp-contacts-btn--off) { background:var(--teal); color:#fff; }
+.qsp-contacts-btn--off { opacity:.42; cursor:not-allowed; border-color:var(--g300); background:var(--g100); color:var(--g400); }
+
+/* ── Dropdown ── */
+.qsp-dropdown {
+  position:absolute; top:100%; left:0; right:0;
+  background:#fff;
+  border:2px solid var(--teal); border-top:none;
+  border-radius:0 0 10px 10px;
+  list-style:none; margin:0; padding:4px 0;
+  z-index:300; box-shadow:0 8px 24px rgba(0,0,0,.1);
+  max-height:230px; overflow-y:auto;
+}
+.qsp-dd-row {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 13px; cursor:pointer;
+  transition:background var(--ease);
+}
+.qsp-dd-row:hover { background:var(--g50); }
+.qsp-dd-av {
+  width:33px; height:33px; border-radius:50%;
+  background:linear-gradient(135deg,var(--teal),var(--teal-mid));
+  color:#fff; font-weight:800; font-size:13px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.qsp-dd-info  { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.qsp-dd-name  { font-size:13px; font-weight:600; color:var(--g900); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.qsp-dd-ph    { font-size:11.5px; color:var(--g400); }
+.qsp-dd-right { display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.qsp-dd-empty {
+  position:absolute; top:100%; left:0; right:0;
+  background:#fff; border:2px solid var(--g200); border-top:none;
+  border-radius:0 0 10px 10px;
+  padding:10px 14px; font-size:12px; color:var(--g400); z-index:300;
+}
+
+/* ── Match / new badges ── */
+.qsp-match-badge {
+  display:flex; align-items:center; gap:7px; flex-wrap:wrap;
+  background:var(--green-lt); border:1.5px solid #bbf7d0;
+  border-radius:8px; padding:8px 12px;
+  font-size:12px; font-weight:600; color:#166534;
+}
+.qsp-match-badge svg { flex-shrink:0; }
+
+.qsp-new-badge {
+  display:flex; align-items:center; gap:7px;
+  background:var(--amber-lt); border:1.5px solid var(--amber-brd);
+  border-radius:8px; padding:8px 12px;
+  font-size:12px; font-weight:600; color:#92400e;
+}
+
+/* ── Status chips ── */
+.qsp-chip {
+  display:inline-block; padding:2px 8px; border-radius:20px;
+  font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px;
+}
+.qsp-chip--green { background:var(--green-lt); color:#166534; }
+.qsp-chip--blue  { background:var(--blue-lt);  color:#1d4ed8; }
+.qsp-chip--amber { background:var(--amber-lt); color:#92400e; }
+.qsp-chip--red   { background:var(--red-lt);   color:var(--red); }
+.qsp-chip--teal  { background:var(--teal-lt);  color:var(--teal); }
+.qsp-chip--gray  { background:var(--g100);     color:var(--g600); }
+
+.qsp-token {
+  font-size:10.5px; font-weight:800; color:var(--teal);
+  background:var(--teal-lt); padding:2px 7px; border-radius:5px;
+}
+
+/* ── Toast ── */
+.qsp-toast {
+  display:flex; align-items:center; gap:8px;
+  padding:10px 13px; border-radius:9px;
+  font-size:13px; font-weight:500;
+  animation:qFadeIn .18s ease;
+}
+.qsp-toast--error   { background:var(--red-lt);   color:#b91c1c; border:1px solid #fecaca; }
+.qsp-toast--success { background:var(--green-lt); color:#166534; border:1px solid #bbf7d0; }
+.qsp-toast--info    { background:var(--blue-lt);  color:#1d4ed8; border:1px solid #bfdbfe; }
+.qsp-spin { display:inline-block; animation:qSpin 1s linear infinite; }
+
+/* ── Drop zone ── */
+.qsp-dz {
+  border:2px dashed var(--g300); border-radius:11px;
+  padding:18px 14px 14px;
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  color:var(--g400); background:#fff; cursor:pointer; user-select:none;
+  text-align:center;
+  transition:border-color var(--ease), background var(--ease), color var(--ease);
+}
+.qsp-dz:hover:not(.qsp-dz--full) { border-color:var(--teal); background:var(--teal-lt); color:var(--teal); }
+.qsp-dz--over { border-color:var(--teal); background:var(--teal-lt); color:var(--teal); }
+.qsp-dz--full { opacity:.5; cursor:not-allowed; }
+.qsp-dz-text  { font-size:13px; font-weight:600; color:inherit; margin:0; }
+.qsp-dz-sub   { font-size:11px; color:var(--g400); margin:0; }
+
+/* ── Attach chips ── */
+.qsp-attach-list { display:flex; flex-wrap:wrap; gap:7px; }
+.qsp-attach-chip {
+  display:flex; align-items:center; gap:8px;
+  padding:7px 10px; background:#fff;
+  border:1.5px solid var(--g200); border-radius:9px;
+  max-width:205px; animation:qFadeIn .14s ease;
+}
+.qsp-thumb      { width:30px; height:30px; object-fit:cover; border-radius:5px; flex-shrink:0; }
+.qsp-file-icon  { width:30px; height:30px; background:var(--blue-lt); border-radius:5px; display:flex; align-items:center; justify-content:center; color:var(--blue); flex-shrink:0; }
+.qsp-attach-info { flex:1; min-width:0; }
+.qsp-attach-name { font-size:11.5px; font-weight:600; color:var(--g700); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.qsp-attach-sz   { font-size:10.5px; color:var(--g400); }
+
+/* ── Send button ── */
+.qsp-send-btn {
+  width:100%; padding:14px;
+  background:linear-gradient(135deg,var(--green),var(--green-dk));
+  color:#fff; border:none; border-radius:12px;
+  font-size:15px; font-weight:700; font-family:var(--font);
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  box-shadow:0 4px 14px rgba(22,163,74,.34);
+  transition:transform .12s, box-shadow .12s, opacity var(--ease);
+}
+.qsp-send-btn:hover:not(.qsp-send-btn--off) { transform:translateY(-1px); box-shadow:0 6px 20px rgba(22,163,74,.42); }
+.qsp-send-btn--off { opacity:.44; cursor:not-allowed; box-shadow:none; }
+
+.qsp-send-badge {
+  background:rgba(255,255,255,.25); padding:2px 8px;
+  border-radius:20px; font-size:11.5px; font-weight:800;
+}
+
+.qsp-spin-circle {
+  width:15px; height:15px;
+  border:2.5px solid rgba(255,255,255,.4); border-top-color:#fff;
+  border-radius:50%; animation:qSpin .7s linear infinite; flex-shrink:0;
+}
+
+/* ── Nudge ── */
+.qsp-nudge { font-size:11.5px; color:var(--amber); text-align:center; margin:-4px 0 0; }
+
+/* ── Quick chips ── */
+.qsp-quick-wrap { border-top:1px solid var(--g200); padding-top:12px; }
+.qsp-quick-lbl  { font-size:10.5px; font-weight:700; color:var(--g400); text-transform:uppercase; letter-spacing:.55px; margin:0 0 8px; }
+.qsp-quick-grid { display:flex; flex-wrap:wrap; gap:6px; }
+.qsp-quick-chip {
+  display:flex; align-items:center; gap:5px;
+  padding:6px 10px; background:var(--g50);
+  border:1.5px solid var(--g200); border-radius:8px;
+  cursor:pointer; font-family:var(--font); max-width:155px;
+  transition:background var(--ease), border-color var(--ease), transform .1s;
+}
+.qsp-quick-chip:hover { background:var(--teal-lt); border-color:var(--teal); transform:translateY(-1px); }
+.qsp-quick-nm { font-size:12px; font-weight:600; color:var(--g700); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* ── Sent log ── */
+.qsp-sent-log { border-top:1px solid var(--g200); padding-top:12px; }
+.qsp-sent-row { display:flex; align-items:center; gap:7px; padding:4px 0; font-size:11.5px; color:var(--g600); }
+.qsp-sent-ck  { color:var(--green); font-weight:700; font-size:13px; }
+.qsp-sent-nm  { flex:1; font-weight:600; color:var(--g700); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.qsp-sent-ph  { font-size:11px; color:var(--g400); }
+.qsp-sent-att { font-size:10.5px; background:var(--g100); padding:1px 6px; border-radius:5px; }
+.qsp-sent-t   { font-size:10.5px; color:var(--g400); white-space:nowrap; }
+
+/* ── Hint ── */
+.qsp-hint { font-size:11px; color:var(--g400); text-align:center; margin:2px 0 0; }
+.qsp-hint kbd { background:var(--g100); border:1px solid var(--g300); border-radius:4px; padding:1px 5px; font-family:monospace; font-size:10px; color:var(--g600); }
+
+/* ── Responsive ── */
+@media (max-width:420px) {
+  .qsp-overlay { padding:12px 8px; }
+  .qsp-panel   { border-radius:14px; }
+  .qsp-header  { padding:14px 14px 12px; }
+  .qsp-body    { padding:14px 13px 18px; gap:10px; }
+  .qsp-contacts-btn span { display:none; }
+  .qsp-contacts-btn      { padding:0 11px; }
+}

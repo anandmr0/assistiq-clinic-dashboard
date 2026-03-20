@@ -5,6 +5,7 @@ import PatientList from './PatientList';
 import ChangePasswordModal from './ChangePasswordModal';
 import { fetchTodayDashboardData, fetchAllAppointments } from '../services/dashboardApi.js';
 import { useAuth } from '../context/AuthContext';
+import QuickSendPanel from './QuickSendPanel';
 
 const DoctorDashboard = ({ doctorId, clinicId }) => {
   const { logout }                                    = useAuth();
@@ -13,7 +14,7 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
   const [currentTime, setCurrentTime]                 = useState(new Date());
   const [showLogout, setShowLogout]                   = useState(false);
   const [showChangePassword, setShowChangePassword]   = useState(false);
-
+const [showQuickSend, setShowQuickSend] = useState(false);
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
@@ -133,6 +134,9 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
               </svg>
               Sign Out
             </button>
+            <button className="header-logout-btn" onClick={() => setShowQuickSend(true)}>
+        ⚡ Quick Send
+        </button>
           </div>
 
         </div>
@@ -190,7 +194,14 @@ const DoctorDashboard = ({ doctorId, clinicId }) => {
       {showChangePassword && (
         <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
       )}
-
+    {showQuickSend && (
+      <QuickSendPanel
+        todayPatients={dashboardData?.todayPatients || []}
+        clinicId={clinicId}
+        doctorId={doctorId}
+        onClose={() => setShowQuickSend(false)}
+      />
+    )}
     </div>
   );
 };
