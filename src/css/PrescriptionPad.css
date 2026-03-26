@@ -214,8 +214,8 @@
 }
 
 .doctor-name {
-  font-family: 'Brush Script MT', 'Lucida Handwriting', cursive;
-  font-size: 1.875rem;
+ 
+  font-size: 1.125rem;
   font-weight: 700;
   color: var(--primary-blue);
   margin: 0 0 0.25rem 0;
