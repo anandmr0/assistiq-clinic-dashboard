@@ -30,6 +30,7 @@ const [showQuickSend, setShowQuickSend] = useState(false);
     try {
       setLoading(true);
       const data = await fetchTodayDashboardData(doctorId, clinicId);
+      console.log("Dashboard data:", data?.doctor);
       setDashboardData(data);
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -94,8 +95,10 @@ const [showQuickSend, setShowQuickSend] = useState(false);
             <div className="doctor-text">
               <p className="doctor-greeting">{greeting} 👋</p>
               <h1>{dashboardData?.doctor?.name || 'Doctor'}</h1>
-              <p className="specialization">{dashboardData?.doctor?.specialization || ''}</p>
+              <p className="specialization">{dashboardData?.doctor?.qualification || ''} || {dashboardData?.doctor?.specialization|| ''}</p>
+            
               <p className="clinic-name">{dashboardData?.doctor?.clinicName || ''}</p>
+              
             </div>
           </div>
 

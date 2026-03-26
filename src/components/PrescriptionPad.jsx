@@ -225,13 +225,13 @@ export function buildPrescriptionHtml(patient, data, doctorInfo) {
       <div class="prescription-header">
         <div class="doctor-details">
           <div class="doctor-name">${escHtml(doctorInfo?.name || 'Dr. Name')}</div>
-          <div class="doctor-qualification">${escHtml(doctorInfo?.qualification || 'MBBS, MD')}</div>
-          <div class="doctor-reg">Reg. No: ${escHtml(doctorInfo?.regNo || 'XXXXXX')}</div>
+          <div class="doctor-qualification">${escHtml(doctorInfo?.specialization || 'MBBS, MD')}</div>
+          <div class="doctor-reg">${escHtml(doctorInfo?.qualification || 'XXXXXX')} || Reg. No: ${escHtml(doctorInfo?.regNo || 'XXXXXX')}</div>
         </div>
         <div class="clinic-details">
           <div class="clinic-name">${escHtml(doctorInfo?.clinicName || 'Clinic Name')}</div>
           <div class="clinic-address">${escHtml(doctorInfo?.address || '')}</div>
-          <div class="clinic-phone">Ph: ${escHtml(doctorInfo?.phoneNumber || '')}</div>
+          <div class="clinic-phone">Ph: ${escHtml(doctorInfo?.clinicNumber || '')}</div>
         </div>
       </div>
 
@@ -363,13 +363,13 @@ const PrescriptionPad = ({ patient, data, isVisible, onClose, doctorInfo }) => {
               <div className="prescription-header">
                 <div className="doctor-details">
                   <h1 className="doctor-name">{doctorInfo?.name || 'Dr. Name'}</h1>
-                  <p className="doctor-qualification">{doctorInfo?.qualification || 'MBBS, MD'}</p>
-                  <p className="doctor-reg">Reg. No: {doctorInfo?.regNo || 'XXXXXX'}</p>
+                  <p className="doctor-qualification">{doctorInfo?.specialization || 'General Physician'}</p>
+                  <p className="doctor-reg">{doctorInfo?.qualification || 'MBBS, MD'} || Reg. No: {doctorInfo?.regNo || 'XXXXXX'}</p>
                 </div>
                 <div className="clinic-details">
                   <h3 className="clinic-name">{doctorInfo?.clinicName || 'Clinic Name'}</h3>
                   <p className="clinic-address">{doctorInfo?.address || 'Clinic Address'}</p>
-                  <p className="clinic-phone">Ph: {doctorInfo?.phoneNumber || '+91 XXXXXXXXXX'}</p>
+                  <p className="clinic-phone">Ph: {doctorInfo?.clinicNumber || '+91 XXXXXXXXXX'}</p>
                 </div>
               </div>
 
