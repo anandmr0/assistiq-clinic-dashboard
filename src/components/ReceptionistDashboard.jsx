@@ -302,7 +302,7 @@ const PatientDrawer = ({ appt, onClose, clinicId, doctorInfo }) => {
         /* Header */
         .hdr{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px}
         .hdr-left{flex:1}
-        .dr-name{font-family:'Dancing Script',cursive;font-size:2rem;color:#1a56db;font-weight:700;line-height:1.2;margin-bottom:3px}
+        .dr-name{font-size:1.125rem;color:#1a56db;font-weight:700;line-height:1.2;margin-bottom:3px}
         .dr-qual{font-size:13px;color:#374151;margin-bottom:2px}
         .dr-reg{font-size:12px;color:#6b7280}
         .clinic-right{text-align:right;max-width:260px}

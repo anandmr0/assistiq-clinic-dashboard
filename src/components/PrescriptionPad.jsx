@@ -38,8 +38,8 @@ export function getPrescriptionPageCss() {
       padding-bottom: 1rem;
     }
     .doctor-name {
-      font-family: 'Dancing Script', 'Brush Script MT', cursive, Georgia, serif;
-      font-size: 2rem;
+      
+      font-size: 1.125rem;
       color: #1a56db;
       font-weight: 700;
       margin-bottom: 0.2rem;
