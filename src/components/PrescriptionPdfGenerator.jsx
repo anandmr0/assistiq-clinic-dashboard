@@ -236,13 +236,13 @@ function buildPrescriptionBody(patient, data, doctorInfo, lang = 'en') {
       <div class="prescription-header">
         <div class="doctor-details">
           <div class="doctor-name">${escHtml(doctorInfo?.name || 'Dr. Name')}</div>
-          <div class="doctor-qualification">${escHtml(doctorInfo?.qualification || doctorInfo?.specialization || 'MBBS, MD')}</div>
-          <div class="doctor-reg">Reg. No: ${escHtml(doctorInfo?.regNo || '')}</div>
+          <div class="doctor-qualification">${escHtml(doctorInfo?.specialization || 'MBBS, MD')}</div>
+          <div class="doctor-reg">${escHtml(doctorInfo?.qualification || '')} || Reg. No: ${escHtml(doctorInfo?.regNo || '')}</div>
         </div>
         <div class="clinic-details">
           <div class="clinic-name">${escHtml(doctorInfo?.clinicName || '')}</div>
           <div class="clinic-address">${escHtml(doctorInfo?.address || '')}</div>
-          <div class="clinic-phone">Ph: ${escHtml(doctorInfo?.phoneNumber || '')}</div>
+          <div class="clinic-phone">Ph: ${escHtml(doctorInfo?.clinicNumber || '')}</div>
         </div>
       </div>
 

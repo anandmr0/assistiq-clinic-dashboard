@@ -735,11 +735,13 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
       patient, data,
       {
         name:          doctorsInfo?.name          || '',
-        qualification: doctorsInfo?.specialization || '',
+        qualification: doctorsInfo?.qualification || '',
+        specialization: doctorsInfo?.specialization || '',
         regNo:         doctorsInfo?.regNo          || '',
         clinicName:    doctorsInfo?.clinicName     || '',
         address:       doctorsInfo?.address        || '',
         phoneNumber:   doctorsInfo?.phoneNumber    || '',
+        clinicNumber:  doctorsInfo?.clinicNumber   || '',
       },
       data.prescriptionLanguage || 'en'
     );
@@ -1627,10 +1629,12 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
                         doctorInfo={{
                           name: doctors?.[0]?.name || "Dr. Name",
                           qualification: doctors?.[0]?.qualification || "MBBS, MD",
+                          specialization: doctors?.[0]?.specialization || "General Physician",
                           regNo: doctors?.[0]?.regNo || "XXXXXX",
                           clinicName: doctors?.[0]?.clinicName || "Clinic Name",
                           address: doctors?.[0]?.address || "Clinic Address",
-                          phoneNumber: doctors?.[0]?.phoneNumber || "+91 XXXXXXXXXX"
+                          phoneNumber: doctors?.[0]?.phoneNumber || "+91 XXXXXXXXXX",
+                          clinicNumber: doctors?.[0]?.clinicNumber || "+91 XXXXXXXXXX"
                         }}
                       />
                     )}
@@ -1784,11 +1788,13 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
           patient={showCanvasNote}
           doctorInfo={{
             name:          doctorsInfo?.name          || 'Dr. Name',
-            qualification: doctorsInfo?.specialization || 'MBBS, MD',
+            qualification: doctorsInfo?.qualification || 'MBBS, MD',
+            specialization: doctorsInfo?.specialization || 'MBBS, MD',
             regNo:         doctorsInfo?.regNo         || 'XXXXXX',
             clinicName:    doctorsInfo?.clinicName    || 'Clinic Name',
             address:       doctorsInfo?.address       || 'Clinic Address',
             phoneNumber:   doctorsInfo?.phoneNumber   || '+91 XXXXXXXXXX',
+            clinicNumber:  doctorsInfo?.clinicNumber   || '+91 XXXXXXXXXX',
           }}
           pastNotes={patientData[showCanvasNote.appointmentId]?.canvasNotes || []}
           savedNote={patientData[showCanvasNote.appointmentId]?.canvasNote  || null}
@@ -1819,6 +1825,7 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
           initData={walkInInitData}
           onClose={() => setShowWalkInModal(false)}
           onSuccess={onRefreshAppointments}
+          todayPatients={todayPatients}
         />
       )}
         {/* Prescription Pad Modal */}
@@ -1830,11 +1837,13 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
       onClose={() => setShowPrescriptionPad(null)}
       doctorInfo={{
         name: doctorsInfo?.name || "Dr. Name",
-        qualification: doctorsInfo?.specialization || "MBBS, MD",
+        qualification: doctorsInfo?.qualification || "MBBS, MD",
+        specialization: doctorsInfo?.specialization || "MBBS, MD",
         regNo: doctorsInfo?.regNo || "XXXXXX",
         clinicName: doctorsInfo?.clinicName || "Clinic Name",
         address: doctorsInfo?.address || "Clinic Address",
-        phoneNumber: doctorsInfo?.phoneNumber || "+91 XXXXXXXXXX"
+        phoneNumber: doctorsInfo?.phoneNumber || "+91 XXXXXXXXXX",
+        clinicNumber: doctorsInfo?.clinicNumber || "+91 XXXXXXXXXX"
       }}
     />
   )}
