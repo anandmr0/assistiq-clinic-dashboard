@@ -368,7 +368,8 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
     frequency: 'once_daily',
     duration: '',
     timing: 'after_food',
-    notes: ''
+    notes: '',
+    dispensed: false,
   });
   const getBasePatients = () => {
     if (filterStatus === 'confirmed') return activePatients   || [];
@@ -544,13 +545,16 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
       const updatedPrescriptions = [...prescriptions];
       updatedPrescriptions[index] = { ...updatedPrescriptions[index], [field]: value };
       
+      // Auto-enable WhatsApp send only when a text field has content AND
+      // at least one medicine in the updated list is NOT dispensed from clinic.
+      const hasPharmacyMed = updatedPrescriptions.some(p => !p.dispensed && p.medicineName?.trim());
       return {
         ...prev,
         [patientId]: {
           ...patientInfo,
           prescriptions: updatedPrescriptions,
-          // ✅ auto-check WhatsApp when any medicine field has content
-          ...(value?.trim?.() ? { sendPrescriptionToPatient: true } : {}),
+          // ✅ auto-check WhatsApp only when there's a pharmacy (non-dispensed) medicine
+          ...(value?.trim?.() && hasPharmacyMed ? { sendPrescriptionToPatient: true } : {}),
         }
       };
     });
@@ -809,7 +813,16 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
   // Internal
   internalNotes: data.internalNotes || "",
 
-  sendPrescriptionToPatient: (cleanPrescriptions.length > 0 || !!data.canvasNote?.imageDataUrl) && (data.sendPrescriptionToPatient ?? true),
+  // Send prescription to patient only if there is at least one medicine the
+  // patient needs to buy from a pharmacy (i.e. NOT dispensed from clinic).
+  // If every medicine is dispensed in-clinic, no prescription needs to be sent.
+  // Canvas notes still trigger sending regardless.
+  sendPrescriptionToPatient: (() => {
+    const hasPharmacyMedicine = cleanPrescriptions.some(p => !p.dispensed);
+    const hasCanvasNote       = !!data.canvasNote?.imageDataUrl;
+    const hasContent          = hasPharmacyMedicine || hasCanvasNote;
+    return hasContent && (data.sendPrescriptionToPatient ?? true);
+  })(),
   prescriptionLanguage: data.prescriptionLanguage || 'en',
 
   // Canvas handwritten note
@@ -1398,7 +1411,7 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
                           </svg>
                           Prescription
                         </h4>
-                        <button
+                        {/* <button
                           className="add-prescription-btn"
                           onClick={() => addPrescription(patient.appointmentId)}
                         >
@@ -1406,7 +1419,7 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
                             <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2"/>
                           </svg>
                           Add Medicine
-                        </button>
+                        </button> */}
                       </div>
                       
                       <div className="prescription-list">
@@ -1515,20 +1528,101 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
                                   onChange={(e) => handlePrescriptionChange(patient.appointmentId, idx, 'notes', e.target.value)}
                                 />
                               </div>
+
+                              {/* ── Dispense from clinic toggle ── */}
+                              <div className="form-field full-width">
+                                <label style={{ fontSize: 13, color: '#374151', fontWeight: 500, marginBottom: 6, display: 'block' }}>
+                                  Dispense from Clinic
+                                </label>
+                                <div
+                                  onClick={() => { if (!isConsultationLocked) handlePrescriptionChange(patient.appointmentId, idx, 'dispensed', !prescription.dispensed); }}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 10,
+                                    cursor: isConsultationLocked ? 'default' : 'pointer',
+                                    padding: '8px 14px',
+                                    borderRadius: 10,
+                                    border: `1.5px solid ${prescription.dispensed ? '#93c5fd' : '#e2e8f0'}`,
+                                    background: prescription.dispensed ? '#eff6ff' : '#f8fafc',
+                                    transition: 'all 0.18s',
+                                    userSelect: 'none',
+                                    width: 'fit-content',
+                                  }}
+                                >
+                                  {/* Toggle pill */}
+                                  <div style={{
+                                    width: 38, height: 20, borderRadius: 10, flexShrink: 0,
+                                    background: prescription.dispensed ? '#2563eb' : '#cbd5e1',
+                                    position: 'relative', transition: 'background 0.2s',
+                                  }}>
+                                    <div style={{
+                                      position: 'absolute', top: 2,
+                                      left: prescription.dispensed ? 20 : 2,
+                                      width: 16, height: 16, borderRadius: '50%',
+                                      background: '#fff', transition: 'left 0.2s',
+                                      boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                                    }} />
+                                  </div>
+                                  <span style={{ fontSize: 13, fontWeight: 600, color: prescription.dispensed ? '#1d4ed8' : '#64748b' }}>
+                                    {prescription.dispensed ? '✓ Dispensed from clinic' : 'Dispense from clinic'}
+                                  </span>
+                                  {prescription.dispensed && (
+                                    <span style={{
+                                      fontSize: 11, background: '#dbeafe', color: '#1e40af',
+                                      padding: '2px 8px', borderRadius: 20, fontWeight: 700,
+                                    }}>
+                                      Clinic stock
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
                             </div>
                           </div>
                         ))}
                       </div>
+
+                      {/* ── Bottom Add Medicine button ── */}
+                      {!isConsultationLocked && (
+                        <button
+                          className="add-prescription-btn"
+                          onClick={() => addPrescription(patient.appointmentId)}
+                          style={{
+                            marginTop: 8, width: '100%', justifyContent: 'center',
+                            
+                          }}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                            <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                          </svg>
+                          Add Medicine
+                        </button>
+                      )}
+
                      {/* Send Prescription Checkbox + Language */}
                      {!isConsultationLocked && (() => {
-                        const hasPrescription = (data.prescriptions || []).some(p => p.medicineName?.trim());
-                        const hasCanvasNote   = !!data.canvasNote?.imageDataUrl;
-                        const hasReports      = (data.reports || []).length > 0;
-                        const hasTests        = (data.selectedTests || []).length > 0;
-                        const hasContent      = hasPrescription || hasCanvasNote || hasReports || hasTests;
-                        const currentLang     = data.prescriptionLanguage || 'en';
+                        // "pharmacy" medicines = medicines the patient must buy (not dispensed from clinic)
+                        const hasPharmacyMedicine = (data.prescriptions || []).some(p => p.medicineName?.trim() && !p.dispensed);
+                        const allDispensed        = (data.prescriptions || []).some(p => p.medicineName?.trim()) && !hasPharmacyMedicine;
+                        const hasCanvasNote       = !!data.canvasNote?.imageDataUrl;
+                        const hasReports          = (data.reports || []).length > 0;
+                        const hasTests            = (data.selectedTests || []).length > 0;
+                        // hasContent = true only when there's something the patient actually needs to receive
+                        const hasContent          = hasPharmacyMedicine || hasCanvasNote || hasReports || hasTests;
+                        const currentLang         = data.prescriptionLanguage || 'en';
                         return (
                           <div className="send-prescription-section">
+                            {/* Show "all dispensed" notice when every medicine comes from clinic */}
+                            {allDispensed && !hasCanvasNote && (
+                              <div style={{
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                padding: '8px 12px', borderRadius: 8, marginBottom: 8,
+                                background: '#f0fdf4', border: '1px solid #86efac',
+                                fontSize: 12.5, color: '#166534', fontWeight: 500,
+                              }}>
+                                <span>✅</span>
+                                <span>All medicines are dispensed from clinic — no prescription will be sent to patient.</span>
+                              </div>
+                            )}
                             {/* Language selector — only shown when there's content to send */}
                             {hasContent && (
                               <div className="prescription-language-row">
@@ -1578,6 +1672,8 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
                                 <small>
                                   {hasContent
                                     ? `Patient will receive prescription in ${LANGUAGES.find(l => l.code === currentLang)?.label || 'English'}`
+                                    : allDispensed
+                                    ? 'All medicines dispensed from clinic — no send needed'
                                     : 'Add medicines or a handwritten note to enable'}
                                 </small>
                               </span>
@@ -1820,7 +1916,8 @@ const PatientList = ({ todayPatients, activePatients, completedPatients, onPatie
       {showWalkInModal && (
         <AddWalkInModal
           role="DOCTOR"
-          lockedDoctorId={doctorId}  
+          lockedDoctorId={doctorId}
+          doctorId={doctorId}
           loading={loadingWalkIn}
           initData={walkInInitData}
           onClose={() => setShowWalkInModal(false)}

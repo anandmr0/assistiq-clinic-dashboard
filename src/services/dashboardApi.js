@@ -75,8 +75,9 @@ export const fetchTodayDashboardData = async (doctorId, clinicId) => {
     const completedList = (completedAppts || []).map(mapAppointment);
     const todayAll      = [...activeList, ...completedList];
 
-    console.log("TODAY ACTIVE:",    activeList.length);
-    console.log("TODAY COMPLETED:", completedList.length);
+    console.log("TODAY ACTIVE:",    activeList);
+    console.log("TODAY COMPLETED:", completedList);
+     console.log("doctorDetails:", doctorDetails);
 
     return {
       doctor:               doctorDetails ?? null,
@@ -97,6 +98,26 @@ export const fetchTodayDashboardData = async (doctorId, clinicId) => {
     };
   }
 };
+// ── Fetches all registered patients for a doctor (for walk-in name search) ──
+// Uses GET /api/patients/registered/{doctorId} — backed by PatientController
+export const fetchRegisteredPatients = async (doctorId) => {
+  if (!doctorId) return [];
+  try {
+    const result = await apiFetch(`/patients/registered/${doctorId}`);
+    const list = Array.isArray(result) ? result : (result?.content || []);
+    return list.map(p => ({
+      patientId:   p.id   || p.patientId,
+      name:        p.name || p.patientName || 'Unknown',
+      phoneNumber: p.phone || p.phoneNumber || '',
+      age:         p.age    ? String(p.age)    : '',
+      gender:      p.gender || '',
+    }));
+  } catch (error) {
+    console.error("fetchRegisteredPatients error:", error);
+    return [];
+  }
+};
+
 export const fetchAllAppointments = async (doctorId, clinicId, page = 0, search = "") => {
   try {
     const params = new URLSearchParams({

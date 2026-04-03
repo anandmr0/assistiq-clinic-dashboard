@@ -154,9 +154,9 @@ const formatTiming    = fmtTiming;
 // ─────────────────────────────────────────────────────────────────────────────
 export function buildPrescriptionHtml(patient, data, doctorInfo) {
   const vitals = data?.vitalSigns || {};
-  const prx    = (data?.prescriptions || []).filter(p => p.medicineName);
+  const prx    = (data?.prescriptions || []).filter(p => p.medicineName && !p.dispensed);
   const today  = new Date().toLocaleDateString('en-IN');
-
+  
   const vitalsHtml = (vitals.systolic || vitals.pulse || vitals.temperature) ? `
     <div class="vitals-compact">
       ${vitals.systolic && vitals.diastolic ? `<span>BP: ${vitals.systolic}/${vitals.diastolic} mmHg</span>` : ''}
@@ -271,7 +271,7 @@ export function buildPrescriptionHtml(patient, data, doctorInfo) {
 const PrescriptionPad = ({ patient, data, isVisible, onClose, doctorInfo }) => {
   const [mode, setMode] = useState('view');
   const printRef = useRef(null);
-
+  
   if (!isVisible) return null;
 
   const handlePrint = () => {
@@ -415,11 +415,11 @@ const PrescriptionPad = ({ patient, data, isVisible, onClose, doctorInfo }) => {
                 </div>
               )}
 
-              {prescriptions.length > 0 && prescriptions.some(p => p.medicineName) && (
+              {prescriptions.length > 0 && prescriptions.some(p => p.medicineName && !p.dispensed) && (
                 <div className="prescription-section medications">
                   <h4 className="section-title">Medications:</h4>
                   <div className="medication-list">
-                    {prescriptions.filter(p => p.medicineName).map((med, idx) => (
+                    {prescriptions.filter(p => p.medicineName && !p.dispensed).map((med, idx) => (
                       <div key={idx} className="medication-item">
                         <div className="med-number">{idx + 1}.</div>
                         <div className="med-details">

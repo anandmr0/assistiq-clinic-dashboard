@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import '../css/AddWalkInModal.css';
 import { apiFetch } from "../services/apiConfig";
+import { fetchRegisteredPatients } from "../services/dashboardApi";
 
 /* ── Icons needed only for the phone field ── */
 const IcPhone = () => (
@@ -51,6 +52,7 @@ const AddWalkInModal = ({
   role           = 'RECEPTIONIST',
   lockedDoctorId = null,
   todayPatients  = [],
+  doctorId       = null,   // ← NEW: used to fetch registered patients by name
 }) => {
   const [toast, setToast] = useState(null);
 
@@ -73,6 +75,12 @@ const AddWalkInModal = ({
   const [submitting, setSubmitting] = useState(false);
   const [errors,     setErrors]     = useState({});
 
+  /* ── Registered-patient search (name lookup) ── */
+  const [registeredPatients, setRegisteredPatients] = useState([]);
+  const [nameDropOpen,       setNameDropOpen]       = useState(false);
+  const [nameFetching,       setNameFetching]       = useState(false);
+  const nameWrapRef = useRef(null);
+
   /* ── phone field extras ── */
   const [matched,    setMatched]    = useState(null);
   const [dropOpen,   setDropOpen]   = useState(false);
@@ -88,7 +96,25 @@ const AddWalkInModal = ({
     setContactsOk('contacts' in navigator && 'ContactsManager' in window);
   }, []);
 
-  /* ── close dropdown on outside click ── */
+  /* ── Fetch registered patients for name-search ── */
+  useEffect(() => {
+    const id = doctorId || lockedDoctorId;
+    if (!id) return;
+    setNameFetching(true);
+    fetchRegisteredPatients(id)
+      .then(list => setRegisteredPatients(list))
+      .catch(() => setRegisteredPatients([]))
+      .finally(() => setNameFetching(false));
+  }, [doctorId, lockedDoctorId]);
+
+  /* ── close name dropdown on outside click ── */
+  useEffect(() => {
+    const fn = e => { if (!nameWrapRef.current?.contains(e.target)) setNameDropOpen(false); };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+  }, []);
+
+  /* ── close phone dropdown on outside click ── */
   useEffect(() => {
     const fn = e => { if (!phoneWrapRef.current?.contains(e.target)) setDropOpen(false); };
     document.addEventListener('mousedown', fn);
@@ -100,26 +126,88 @@ const AddWalkInModal = ({
     if (initData?.date) setFormData(prev => ({ ...prev, appointmentDate: initData.date }));
   }, [initData]);
 
-  /* ── Auto-lock doctor when role=DOCTOR ── */
-  useEffect(() => {
-    if (isDoctor && lockedDoctorId) {
-      setFormData(prev => {
-        const doc = doctors.find(d => String(d.doctorId) === String(lockedDoctorId));
-        return { ...prev, doctorId: String(lockedDoctorId), doctorName: doc?.doctorName || '' };
-      });
-    }
-  }, [isDoctor, lockedDoctorId, doctors.length]); // eslint-disable-line
+  /* ── Helper: compute best slot for a doctor based on current time ── */
+  const autoSelectSlot = useCallback((doc) => {
+    if (!doc) return '';
+    const { morningAvailable, eveningAvailable, morningEnd, eveningStart } = doc;
+    const toMins = (t) => {
+      if (!t) return null;
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+    const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
+    const mEnd   = toMins(morningEnd);
+    const eStart = toMins(eveningStart);
 
-  /* ── Auto-select slot if only one available ── */
+    if (morningAvailable && !eveningAvailable) return 'MORNING';
+    if (eveningAvailable && !morningAvailable) return 'EVENING';
+    if (morningAvailable && eveningAvailable) {
+      const morningStillOn = mEnd   == null || nowMins <= mEnd;
+      const eveningNotYet  = eStart == null || nowMins <  eStart;
+      return (morningStillOn && eveningNotYet) ? 'MORNING' : 'EVENING';
+    }
+    return '';
+  }, []);
+
+  /* ── Auto-lock doctor + slot (DOCTOR role) ──
+     Merges both into one setState so doctorId and slot are set atomically,
+     avoiding the race where slot effect fires before doctorId is populated. */
   useEffect(() => {
-    const doc = doctors.find(d => String(d.doctorId) === String(formData.doctorId));
-    if (!doc) return;
-    if (doc.morningAvailable && !doc.eveningAvailable) setFormData(prev => ({ ...prev, slot: 'MORNING' }));
-    if (doc.eveningAvailable && !doc.morningAvailable) setFormData(prev => ({ ...prev, slot: 'EVENING' }));
+    if (!isDoctor || !lockedDoctorId || !doctors.length) return;
+    const doc  = doctors.find(d => String(d.doctorId) === String(lockedDoctorId));
+    const slot = autoSelectSlot(doc);
+    setFormData(prev => ({
+      ...prev,
+      doctorId:   String(lockedDoctorId),
+      doctorName: doc?.doctorName || '',
+      ...(slot ? { slot } : {}),
+    }));
+  }, [isDoctor, lockedDoctorId, doctors.length, autoSelectSlot]); // eslint-disable-line
+
+  /* ── Re-compute slot when receptionist picks a different doctor ── */
+  useEffect(() => {
+    if (isDoctor) return; // already handled above
+    const doc  = doctors.find(d => String(d.doctorId) === String(formData.doctorId));
+    const slot = autoSelectSlot(doc);
+    if (slot) setFormData(prev => ({ ...prev, slot }));
   }, [formData.doctorId]); // eslint-disable-line
 
   const selectedDoctor   = doctors.find(d => String(d.doctorId) === String(formData.doctorId));
   const lockedDoctorName = doctors.find(d => String(d.doctorId) === String(lockedDoctorId))?.doctorName || 'You';
+
+  /* ══════════════  NAME SEARCH (registered patients)  ══════════════════════ */
+  // Combine registeredPatients + todayPatients (deduped by patientId) as the pool
+  const allKnownPatients = useMemo(() => {
+    const map = new Map();
+    [...registeredPatients, ...todayPatients].forEach(p => {
+      const key = p.patientId || p.phoneNumber || p.name;
+      if (key && !map.has(key)) map.set(key, p);
+    });
+    return Array.from(map.values());
+  }, [registeredPatients, todayPatients]);
+
+  const nameSuggestions = useMemo(() => {
+    const q = formData.patientName.trim().toLowerCase();
+    if (!q || q.length < 2) return [];
+    return allKnownPatients
+      .filter(p => (p.name || '').toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [formData.patientName, allKnownPatients]);
+
+  /** Called when doctor clicks a name in the name-search dropdown */
+  const handleSelectRegistered = useCallback(p => {
+    setFormData(prev => ({
+      ...prev,
+      patientName: p.name  || prev.patientName,
+      phoneNumber: (p.phoneNumber || p.phone || '').toString(),
+      age:         p.age   ? String(p.age)   : prev.age,
+      gender:      p.gender || prev.gender,
+    }));
+    setMatched(p);
+    setNameDropOpen(false);
+    setErrors(prev => ({ ...prev, patientName: '', phoneNumber: '' }));
+  }, []);
+  /* ══════════════════════════════════════════════════════════════════════════ */
 
   /* ══════════════  PHONE AUTOCOMPLETE  ══════════════════════════════════════ */
   const suggestions = useMemo(() => {
@@ -152,6 +240,8 @@ const AddWalkInModal = ({
       ...prev,
       phoneNumber: (p.phoneNumber || p.phone || '').toString(),
       patientName: p.name || prev.patientName,
+      age:         p.age  ? String(p.age)  : prev.age,
+      gender:      p.gender || prev.gender,
     }));
     setMatched(p);
     setDropOpen(false);
@@ -219,7 +309,7 @@ const AddWalkInModal = ({
     const h12  = h % 12 || 12;
     return `${h12}:${minutes} ${ampm}`;
   };
-
+ 
   /* ── Submit ── */
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -391,24 +481,108 @@ const AddWalkInModal = ({
           {/* ── PATIENT DETAILS ── */}
           <div className="form-divider"><span>Patient Details</span></div>
 
-          <div className="form-group">
+          <div className="form-group" ref={nameWrapRef} style={{ position: 'relative' }}>
             <label className="form-label">
               Patient Name *
+              {nameFetching && (
+                <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 8, fontWeight: 400 }}>
+                  Loading patients…
+                </span>
+              )}
+              {!nameFetching && registeredPatients.length > 0 && (
+                <span style={{ fontSize: 11, background: '#eff6ff', color: '#2563eb', padding: '2px 8px', borderRadius: 20, fontWeight: 600, marginLeft: 6 }}>
+                  {registeredPatients.length} registered
+                </span>
+              )}
               <svg viewBox="0 0 24 24" fill="none" className="label-icon">
                 <path d="M20 21V19C20 16.7909 18.2091 15 16 15H8C5.79086 15 4 16.7909 4 19V21" stroke="currentColor" strokeWidth="2"/>
                 <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2"/>
               </svg>
             </label>
-            <input
-              type="text"
-              className={`form-input ${errors.patientName ? 'error' : ''}`}
-              placeholder="Enter patient full name"
-              value={formData.patientName}
-              onChange={e => {
-                setFormData({ ...formData, patientName: e.target.value });
-                if (formData.phoneNumber) tryMatch(e.target.value, formData.phoneNumber);
-              }}
-            />
+
+            {/* Name input with search icon */}
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                className={`form-input ${errors.patientName ? 'error' : ''}`}
+                placeholder={
+                  matched
+                    ? matched.name
+                    : registeredPatients.length > 0
+                    ? 'Type name to search registered patients…'
+                    : 'Enter patient full name'
+                }
+                value={formData.patientName}
+                autoComplete="off"
+                onChange={e => {
+                  const val = e.target.value;
+                  setFormData(prev => ({ ...prev, patientName: val }));
+                  if (errors.patientName) setErrors(prev => ({ ...prev, patientName: '' }));
+                  // If user is editing away from matched patient, clear the match
+                  if (matched && val !== matched.name) setMatched(null);
+                  if (formData.phoneNumber) tryMatch(val, formData.phoneNumber);
+                  setNameDropOpen(true);
+                }}
+                onFocus={() => { if (formData.patientName.length >= 2) setNameDropOpen(true); }}
+                style={{ paddingRight: formData.patientName ? 32 : undefined }}
+              />
+              {/* Magnifier icon hint */}
+              {!formData.patientName && (
+                <svg viewBox="0 0 24 24" fill="none" width="15" height="15"
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}>
+                  <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              )}
+              {/* Clear button */}
+              {formData.patientName && (
+                <button type="button" style={{
+                  position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0,
+                }} onClick={() => {
+                  setFormData(prev => ({ ...prev, patientName: '' }));
+                  setMatched(null);
+                  setNameDropOpen(false);
+                }}>
+                  <IcClear />
+                </button>
+              )}
+            </div>
+
+            {/* Name-search dropdown */}
+            {nameDropOpen && nameSuggestions.length > 0 && (
+              <ul className="wi-dropdown" style={{ top: '100%' }}>
+                {nameSuggestions.map(p => (
+                  <li key={p.patientId || p.phoneNumber || p.name} className="wi-dd-row"
+                    onMouseDown={() => handleSelectRegistered(p)}>
+                    <div className="wi-dd-av">{(p.name || '?')[0].toUpperCase()}</div>
+                    <div className="wi-dd-info">
+                      <span className="wi-dd-name">{p.name}</span>
+                      <span className="wi-dd-ph">
+                        {p.phoneNumber || p.phone || ''}
+                        {p.age ? ` · ${p.age}y` : ''}
+                        {p.gender ? ` · ${p.gender}` : ''}
+                      </span>
+                    </div>
+                    <div className="wi-dd-right">
+                      {p.status ? (
+                        <span className={`wi-chip ${STATUS_CLS[(p.status||'').toUpperCase()]||'wi-chip--gray'}`}>
+                          {p.status}
+                        </span>
+                      ) : (
+                        <span className="wi-chip wi-chip--blue">Registered</span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* "no match" hint only when user has typed enough */}
+            {nameDropOpen && formData.patientName.length >= 2 && nameSuggestions.length === 0 && !nameFetching && (
+              <div className="wi-dd-empty">No registered patient found · will register as new</div>
+            )}
+
             {errors.patientName && <span className="error-text">{errors.patientName}</span>}
           </div>
 
