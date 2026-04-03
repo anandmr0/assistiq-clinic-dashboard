@@ -43,6 +43,7 @@ const mapAppointment = (a) => ({
     duration:     p.duration     || "",
     timing:       p.timing       || "after_food",
     notes:        p.notes        || "",
+    dispensed:    p.dispensed    || false, 
   })),
   reports: (a.reports || []).map(r => ({
     id:         r.id,
