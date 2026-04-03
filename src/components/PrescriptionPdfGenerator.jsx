@@ -164,7 +164,7 @@ const PRESCRIPTION_CSS = `
 // ── Build the prescription HTML body ─────────────────────────────────────────
 function buildPrescriptionBody(patient, data, doctorInfo, lang = 'en') {
   const vitals = data?.vitalSigns || {};
-  const prx    = (data?.prescriptions || []).filter(p => p.medicineName);
+  const prx    = (data?.prescriptions || []).filter(p => p.medicineName && !p.dispensed);
   const today  = new Date().toLocaleDateString('en-IN');
 
   const vitalsHtml = (vitals.systolic || vitals.pulse || vitals.temperature) ? `
